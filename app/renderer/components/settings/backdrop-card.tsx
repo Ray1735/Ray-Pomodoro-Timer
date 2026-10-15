@@ -16,8 +16,8 @@ export default function BackdropCard({
 }: BackdropCardProps) {
   return (
     <SettingsCard
-      title="Backdrop"
-      helperText="Show a colored overlay behind break windows to limit distractions."
+      title="背景遮罩"
+      helperText="休息时在窗口后面铺一层彩色遮罩，减少干扰。"
       toggle={{
         checked: settingsDraft.showBackdrop,
         onCheckedChange: (checked) => onSwitchChange("showBackdrop", checked),
@@ -25,7 +25,7 @@ export default function BackdropCard({
       }}
     >
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Opacity</Label>
+        <Label className="text-sm font-medium">不透明度</Label>
         <div className="px-2">
           <Slider
             min={0.2}

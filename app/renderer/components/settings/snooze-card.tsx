@@ -25,8 +25,8 @@ export default function SnoozeCard({
 }: SnoozeCardProps) {
   return (
     <SettingsCard
-      title="Snooze"
-      helperText="Snoozing allows you to postpone breaks when busy."
+      title="推迟"
+      helperText="忙的时候，可以把这次休息往后推一推。"
       toggle={{
         checked:
           settingsDraft.postponeBreakEnabled &&
@@ -38,7 +38,7 @@ export default function SnoozeCard({
     >
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Length</Label>
+          <Label className="text-sm font-medium">推迟时长</Label>
           <TimeInput
             precision="seconds"
             value={settingsDraft.postponeLengthSeconds}
@@ -56,7 +56,7 @@ export default function SnoozeCard({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Limit</Label>
+          <Label className="text-sm font-medium">每次最多推迟</Label>
           <Select
             value={settingsDraft.postponeLimit.toString()}
             onValueChange={onPostponeLimitChange}
@@ -69,12 +69,12 @@ export default function SnoozeCard({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">1</SelectItem>
-              <SelectItem value="2">2</SelectItem>
-              <SelectItem value="3">3</SelectItem>
-              <SelectItem value="4">4</SelectItem>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="0">No limit</SelectItem>
+              <SelectItem value="1">1 次</SelectItem>
+              <SelectItem value="2">2 次</SelectItem>
+              <SelectItem value="3">3 次</SelectItem>
+              <SelectItem value="4">4 次</SelectItem>
+              <SelectItem value="5">5 次</SelectItem>
+              <SelectItem value="0">不限</SelectItem>
             </SelectContent>
           </Select>
         </div>

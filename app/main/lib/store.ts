@@ -151,10 +151,33 @@ function migrateSettings(settings: any): Settings {
   return settings;
 }
 
+// Chinese fork: people switching from the English build still have the old
+// English default title/message saved. Show the Chinese defaults instead,
+// but leave any text the user wrote themselves untouched.
+const LEGACY_ENGLISH_BREAK_TITLE = "Time for a break.";
+const LEGACY_ENGLISH_BREAK_MESSAGE =
+  "Rest your eyes.\nStretch your legs.\nBreathe. Relax.";
+
+function localizeLegacyDefaults(settings: Settings): Settings {
+  return {
+    ...settings,
+    breakTitle:
+      settings.breakTitle === LEGACY_ENGLISH_BREAK_TITLE
+        ? defaultSettings.breakTitle
+        : settings.breakTitle,
+    breakMessage:
+      settings.breakMessage === LEGACY_ENGLISH_BREAK_MESSAGE
+        ? defaultSettings.breakMessage
+        : settings.breakMessage,
+  };
+}
+
 export function getSettings(): Settings {
   const settings = store.get("settings");
   const migratedSettings = migrateSettings(settings);
-  return Object.assign({}, defaultSettings, migratedSettings) as Settings;
+  return localizeLegacyDefaults(
+    Object.assign({}, defaultSettings, migratedSettings) as Settings,
+  );
 }
 
 export function setSettings(settings: Settings, resetBreaks = true): void {

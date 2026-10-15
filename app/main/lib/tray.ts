@@ -52,17 +52,17 @@ function getDisableTimeRemaining(): string {
   const remainingDisplayMinutes = remainingMinutes % 60;
 
   if (remainingMinutes < 1) {
-    return "<1m";
+    return "不到 1 分钟";
   } else if (remainingHours > 0) {
-    return `${remainingHours}h ${remainingDisplayMinutes}m`;
+    return `${remainingHours} 小时 ${remainingDisplayMinutes} 分钟`;
   } else {
-    return `${remainingMinutes}m`;
+    return `${remainingMinutes} 分钟`;
   }
 }
 
 function formatCompactDuration(seconds: number): string {
   if (seconds < 60) {
-    return "<1m";
+    return "<1分";
   }
 
   const totalMinutes = Math.floor(seconds / 60);
@@ -70,10 +70,10 @@ function formatCompactDuration(seconds: number): string {
   const minutes = totalMinutes % 60;
 
   if (hours > 0) {
-    return minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
+    return minutes > 0 ? `${hours}时${minutes}分` : `${hours}小时`;
   }
 
-  return `${totalMinutes}m`;
+  return `${totalMinutes}分`;
 }
 
 function getTrayTitle(): string | null {
@@ -174,10 +174,10 @@ export function buildTray(): void {
 
   const createAboutWindow = (): void => {
     dialog.showMessageBox({
-      title: "About",
+      title: "关于",
       type: "info",
       message: `BreakTimer`,
-      detail: `Build: ${packageJson.version}\n\nWebsite:\nhttps://breaktimer.app\n\nSource Code:\nhttps://github.com/tom-james-watson/breaktimer-app\n\nDistributed under GPL-3.0-or-later license.`,
+      detail: `版本：${packageJson.version}（中文版）\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/breaktimer-app\n\n依据 GPL-3.0-or-later 许可证发布。`,
     });
   };
 
@@ -197,11 +197,11 @@ export function buildTray(): void {
 
   if (minsLeft !== undefined) {
     if (minsLeft > 1) {
-      nextBreak = `Next break in ${minsLeft} minutes`;
+      nextBreak = `距下次休息还有 ${minsLeft} 分钟`;
     } else if (minsLeft === 1) {
-      nextBreak = `Next break in 1 minute`;
+      nextBreak = `距下次休息还有 1 分钟`;
     } else {
-      nextBreak = `Next break in less than a minute`;
+      nextBreak = `距下次休息不到 1 分钟`;
     }
   }
 
@@ -218,36 +218,36 @@ export function buildTray(): void {
       enabled: false,
     },
     {
-      label: `Disabled for ${getDisableTimeRemaining()}`,
+      label: `已暂停，还剩 ${getDisableTimeRemaining()}`,
       visible: disableEndTime !== null && !breaksEnabled,
       enabled: false,
     },
     {
-      label: `Outside of working hours`,
+      label: `当前不在工作时间`,
       visible: !inWorkingHours,
       enabled: false,
     },
     {
-      label: `Idle`,
+      label: `空闲中`,
       visible: idle,
       enabled: false,
     },
     { type: "separator" },
     {
-      label: "Enable",
+      label: "恢复休息提醒",
       click: setBreaksEnabled.bind(null, true),
       visible: !breaksEnabled,
     },
     {
-      label: "Disable...",
+      label: "暂停休息提醒",
       submenu: [
-        { label: "Indefinitely", click: disableIndefinitely },
-        { label: "30 minutes", click: () => disableBreaksFor(30 * 60 * 1000) },
-        { label: "1 hour", click: () => disableBreaksFor(60 * 60 * 1000) },
-        { label: "2 hours", click: () => disableBreaksFor(2 * 60 * 60 * 1000) },
-        { label: "4 hours", click: () => disableBreaksFor(4 * 60 * 60 * 1000) },
+        { label: "一直暂停", click: disableIndefinitely },
+        { label: "30 分钟", click: () => disableBreaksFor(30 * 60 * 1000) },
+        { label: "1 小时", click: () => disableBreaksFor(60 * 60 * 1000) },
+        { label: "2 小时", click: () => disableBreaksFor(2 * 60 * 60 * 1000) },
+        { label: "4 小时", click: () => disableBreaksFor(4 * 60 * 60 * 1000) },
         {
-          label: "Rest of day",
+          label: "今天剩下的时间",
           click: () => {
             const now = new Date();
             const endOfDay = new Date(
@@ -265,7 +265,7 @@ export function buildTray(): void {
       visible: breaksEnabled,
     },
     {
-      label: "Start break now",
+      label: "立即开始休息",
       visible: !havingBreak,
       click: () => {
         log.info("Start break now selected");
@@ -273,9 +273,9 @@ export function buildTray(): void {
       },
     },
     { type: "separator" },
-    { label: "Settings...", click: createSettingsWindow },
-    { label: "About...", click: createAboutWindow },
-    { label: "Quit", click: quit },
+    { label: "设置…", click: createSettingsWindow },
+    { label: "关于…", click: createAboutWindow },
+    { label: "退出", click: quit },
   ]);
 
   // Call this again for Linux because we modified the context menu

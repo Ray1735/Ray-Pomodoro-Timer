@@ -42,7 +42,7 @@ export function createSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    title: "BreakTimer — Settings",
+    title: "BreakTimer — 设置",
     show: false,
     width: 580,
     minWidth: 580,
@@ -104,8 +104,13 @@ export function createBreakWindows(): void {
   if (settings.postponeBreakEnabled) buttonCount++;
   if (settings.skipBreakEnabled) buttonCount++;
 
+  // The Chinese snooze label includes the duration ("推迟 3 分钟"), which is
+  // wider than the original "Snooze", so give it a little extra room.
   const notificationWidth =
-    450 + (buttonCount - 1) * 50 + (buttonCount === 3 ? 20 : 0);
+    450 +
+    (buttonCount - 1) * 50 +
+    (buttonCount === 3 ? 20 : 0) +
+    (settings.postponeBreakEnabled ? 30 : 0);
 
   const displays = screen.getAllDisplays();
   for (let windowIndex = 0; windowIndex < displays.length; windowIndex++) {

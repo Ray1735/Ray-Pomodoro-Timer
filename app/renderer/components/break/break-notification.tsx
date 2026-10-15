@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import moment from "moment";
 import { useEffect, useState } from "react";
-import { formatTimeSinceLastBreak } from "./utils";
+import { formatSnoozeLabel, formatTimeSinceLastBreak } from "./utils";
 
 const GRACE_PERIOD_MS = 60000;
 const TOTAL_COUNTDOWN_MS = 120000;
@@ -13,6 +13,7 @@ interface BreakNotificationProps {
   onSkipBreak: () => void;
   onStartBreakNow: () => void;
   postponeBreakEnabled: boolean;
+  postponeLengthSeconds: number;
   skipBreakEnabled: boolean;
   timeSinceLastBreak: number | null;
   textColor: string;
@@ -25,6 +26,7 @@ export function BreakNotification({
   onSkipBreak,
   onStartBreakNow,
   postponeBreakEnabled,
+  postponeLengthSeconds,
   skipBreakEnabled,
   timeSinceLastBreak,
   textColor,
@@ -101,8 +103,8 @@ export function BreakNotification({
             style={{ color: textColor }}
           >
             {phase === "grace"
-              ? "Start your break when ready..."
-              : `Break starting in ${secondsRemaining}s...`}
+              ? "准备好就开始休息吧…"
+              : `${secondsRemaining} 秒后开始休息…`}
           </h2>
           {timeSinceLastBreak !== null && (
             <p
@@ -129,7 +131,7 @@ export function BreakNotification({
                 borderColor: "rgba(255, 255, 255, 0.2)",
               }}
             >
-              Start
+              开始休息
             </Button>
           </div>
           {postponeBreakEnabled && (
@@ -147,7 +149,7 @@ export function BreakNotification({
                   borderColor: "rgba(255, 255, 255, 0.2)",
                 }}
               >
-                Snooze
+                {formatSnoozeLabel(postponeLengthSeconds)}
               </Button>
             </div>
           )}
@@ -166,7 +168,7 @@ export function BreakNotification({
                   borderColor: "rgba(255, 255, 255, 0.2)",
                 }}
               >
-                Skip
+                跳过
               </Button>
             </div>
           )}

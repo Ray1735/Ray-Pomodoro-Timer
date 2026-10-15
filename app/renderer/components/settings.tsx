@@ -141,7 +141,7 @@ export default function SettingsEl() {
 
   const handleSave = async () => {
     await ipcRenderer.invokeSetSettings(settingsDraft);
-    toast("Settings saved");
+    toast("设置已保存");
     setSettings(settingsDraft);
   };
 
@@ -188,8 +188,8 @@ export default function SettingsEl() {
 
           <TabsContent value="working-hours" className="m-0 space-y-6">
             <SettingsCard
-              title="Working Hours"
-              helperText="Only show breaks during your configured work schedule."
+              title="工作时间"
+              helperText="只在你设定的工作时间内提醒休息。"
               toggle={{
                 checked: settingsDraft.workingHoursEnabled,
                 onCheckedChange: (checked) =>

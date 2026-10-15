@@ -149,7 +149,7 @@ export function BreakProgress({
               borderColor: "rgba(255, 255, 255, 0.2)",
             }}
           >
-            {progress < 0.5 ? "Cancel Break" : "End Break"}
+            {progress < 0.5 ? "取消休息" : "结束休息"}
           </Button>
         )}
       </div>

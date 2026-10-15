@@ -22,15 +22,15 @@ export default function TrayCard({
 }: TrayCardProps) {
   return (
     <SettingsCard
-      title="Menu Bar Text"
-      helperText="Show timing information next to the menu bar icon."
+      title="菜单栏文字"
+      helperText="在菜单栏图标旁边显示时间。"
       toggle={{
         checked: settingsDraft.trayTextEnabled,
         onCheckedChange: (checked) =>
           onSwitchChange("trayTextEnabled", checked),
       }}
     >
-      <FormGroup label="Text">
+      <FormGroup label="显示内容">
         <Select
           value={settingsDraft.trayTextMode}
           disabled={!settingsDraft.trayTextEnabled}
@@ -41,10 +41,10 @@ export default function TrayCard({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={TrayTextMode.TimeToNextBreak}>
-              Time to next break
+              距下次休息还有多久
             </SelectItem>
             <SelectItem value={TrayTextMode.TimeSinceLastBreak}>
-              Time since last break
+              距上次休息过了多久
             </SelectItem>
           </SelectContent>
         </Select>

@@ -3,12 +3,27 @@ export function formatTimeSinceLastBreak(seconds: number): string {
   const minutes = Math.floor((seconds % 3600) / 60);
 
   if (hours > 0) {
-    return `${hours}h${minutes > 0 ? ` ${minutes}m` : ""} since last break`;
+    return `距上次休息已过 ${hours} 小时${minutes > 0 ? ` ${minutes} 分钟` : ""}`;
   } else if (minutes > 0) {
-    return `${minutes}m since last break`;
+    return `距上次休息已过 ${minutes} 分钟`;
   } else {
-    return "Less than 1m since last break";
+    return "距上次休息不到 1 分钟";
   }
+}
+
+// Label for the snooze button, e.g. "推迟 3 分钟", so the button always shows
+// the postpone length configured in settings.
+export function formatSnoozeLabel(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours} 小时`);
+  if (minutes > 0) parts.push(`${minutes} 分钟`);
+  if (secs > 0) parts.push(`${secs} 秒`);
+
+  return parts.length > 0 ? `推迟 ${parts.join(" ")}` : "推迟";
 }
 
 export function createRgba(hex: string, a: number) {

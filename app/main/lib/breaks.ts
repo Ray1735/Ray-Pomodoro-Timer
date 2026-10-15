@@ -140,8 +140,8 @@ function createIdleNotification() {
 
   if (settings.idleResetNotification) {
     showNotification(
-      "Break automatically detected",
-      `Away for ${zeroPad(idleHours)}:${zeroPad(idleMinutes)}:${zeroPad(
+      "已自动识别为休息",
+      `你离开了 ${zeroPad(idleHours)}:${zeroPad(idleMinutes)}:${zeroPad(
         idleSeconds,
       )}`,
     );
@@ -229,7 +229,7 @@ function doBreak(): void {
   }
 
   if (settings.notificationType === NotificationType.Notification) {
-    showNotification("Time for a break!", stripHtml(settings.breakMessage));
+    showNotification("该休息了！", stripHtml(settings.breakMessage));
     if (settings.soundType !== SoundType.None) {
       sendIpc(
         IpcChannel.SoundStartPlay,

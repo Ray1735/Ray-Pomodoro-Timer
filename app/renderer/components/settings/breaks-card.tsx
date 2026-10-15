@@ -32,7 +32,7 @@ export default function BreaksCard({
 }: BreaksCardProps) {
   return (
     <SettingsCard
-      title="Breaks"
+      title="休息"
       toggle={{
         checked: settingsDraft.breaksEnabled,
         onCheckedChange: (checked) => onSwitchChange("breaksEnabled", checked),
@@ -41,7 +41,7 @@ export default function BreaksCard({
       <div className="space-y-4">
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Type</Label>
+            <Label className="text-sm font-medium">提醒方式</Label>
             <Select
               value={settingsDraft.notificationType}
               onValueChange={onNotificationTypeChange}
@@ -52,16 +52,16 @@ export default function BreaksCard({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NotificationType.Popup}>
-                  Popup break
+                  弹窗休息
                 </SelectItem>
                 <SelectItem value={NotificationType.Notification}>
-                  Simple notification
+                  普通通知
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Frequency</Label>
+            <Label className="text-sm font-medium">间隔</Label>
             <TimeInput
               precision="seconds"
               value={settingsDraft.breakFrequencySeconds}
@@ -76,7 +76,7 @@ export default function BreaksCard({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Length</Label>
+            <Label className="text-sm font-medium">时长</Label>
             <TimeInput
               precision="seconds"
               value={settingsDraft.breakLengthSeconds}
@@ -95,7 +95,7 @@ export default function BreaksCard({
           </div>
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Title</Label>
+          <Label className="text-sm font-medium">标题</Label>
           <Input
             id="break-title"
             className="text-sm"
@@ -105,7 +105,7 @@ export default function BreaksCard({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Message</Label>
+          <Label className="text-sm font-medium">内容</Label>
           <Textarea
             id="break-message"
             className="text-sm resize-none"
@@ -113,7 +113,7 @@ export default function BreaksCard({
             value={settingsDraft.breakMessage}
             onChange={onTextChange.bind(null, "breakMessage")}
             disabled={!settingsDraft.breaksEnabled}
-            placeholder="Enter your break message..."
+            placeholder="输入休息时显示的内容…"
           />
         </div>
       </div>

@@ -137,6 +137,7 @@ export default function Break() {
               allowPostpone &&
               !settings.immediatelyStartBreaks
             }
+            postponeLengthSeconds={settings.postponeLengthSeconds}
             skipBreakEnabled={
               settings.skipBreakEnabled && !settings.immediatelyStartBreaks
             }

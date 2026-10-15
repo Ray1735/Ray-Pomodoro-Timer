@@ -17,8 +17,8 @@ export default function SmartBreaksCard({
 }: SmartBreaksCardProps) {
   return (
     <SettingsCard
-      title="Smart Breaks"
-      helperText="Automatically detect natural breaks and reset the break timer."
+      title="智能识别休息"
+      helperText="离开电脑够久就自动算作休息过了，重新开始计时。"
       toggle={{
         checked: settingsDraft.idleResetEnabled,
         onCheckedChange: (checked) =>
@@ -27,7 +27,7 @@ export default function SmartBreaksCard({
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Minimum idle time</Label>
+          <Label className="text-sm font-medium">离开多久算休息</Label>
           <TimeInput
             precision="seconds"
             value={settingsDraft.idleResetLengthSeconds}
@@ -49,7 +49,7 @@ export default function SmartBreaksCard({
             }
             disabled={!settingsDraft.idleResetEnabled}
           />
-          <Label>Show notification when break automatically detected</Label>
+          <Label>识别到休息时发一条通知</Label>
         </div>
       </div>
     </SettingsCard>

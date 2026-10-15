@@ -228,7 +228,7 @@ export default function TimeInput({
         maxLength={2}
         className="w-6 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
       />
-      <span className="text-muted-foreground text-xs self-end">h</span>
+      <span className="text-muted-foreground text-xs self-end">时</span>
 
       <span className="text-muted-foreground mx-1">:</span>
 
@@ -246,7 +246,7 @@ export default function TimeInput({
         maxLength={2}
         className="w-6 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
       />
-      <span className="text-muted-foreground text-xs self-end">m</span>
+      <span className="text-muted-foreground text-xs self-end">分</span>
 
       {precision === "seconds" && (
         <>
@@ -265,7 +265,7 @@ export default function TimeInput({
             maxLength={2}
             className="w-6 text-center bg-transparent border-none outline-none focus:ring-0 p-0"
           />
-          <span className="text-muted-foreground text-xs self-end">s</span>
+          <span className="text-muted-foreground text-xs self-end">秒</span>
         </>
       )}
     </div>

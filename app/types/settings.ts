@@ -111,8 +111,8 @@ export const defaultSettings: Settings = {
   idleResetNotification: false,
   soundType: SoundType.Gong,
   breakSoundVolume: 1,
-  breakTitle: "Time for a break.",
-  breakMessage: "Rest your eyes.\nStretch your legs.\nBreathe. Relax.",
+  breakTitle: "该休息了。",
+  breakMessage: "让眼睛休息一下。\n站起来活动活动。\n深呼吸，放松。",
   backgroundColor: "#16a085",
   textColor: "#ffffff",
   showBackdrop: true,
@@ -136,11 +136,11 @@ export interface DayConfig {
 }
 
 export const daysConfig: DayConfig[] = [
-  { key: "workingHoursMonday", label: "Monday" },
-  { key: "workingHoursTuesday", label: "Tuesday" },
-  { key: "workingHoursWednesday", label: "Wednesday" },
-  { key: "workingHoursThursday", label: "Thursday" },
-  { key: "workingHoursFriday", label: "Friday" },
-  { key: "workingHoursSaturday", label: "Saturday" },
-  { key: "workingHoursSunday", label: "Sunday" },
+  { key: "workingHoursMonday", label: "星期一" },
+  { key: "workingHoursTuesday", label: "星期二" },
+  { key: "workingHoursWednesday", label: "星期三" },
+  { key: "workingHoursThursday", label: "星期四" },
+  { key: "workingHoursFriday", label: "星期五" },
+  { key: "workingHoursSaturday", label: "星期六" },
+  { key: "workingHoursSunday", label: "星期日" },
 ];

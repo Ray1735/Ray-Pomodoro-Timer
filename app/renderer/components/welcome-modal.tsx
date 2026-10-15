@@ -27,14 +27,14 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
         showCloseButton={false}
       >
         <DialogHeader className="text-left">
-          <DialogTitle>BreakTimer runs in the background</DialogTitle>
+          <DialogTitle>BreakTimer 在后台运行</DialogTitle>
           <DialogDescription className="text-base leading-relaxed text-balance pt-2">
-            The app can be accessed via your system tray.
+            点击屏幕顶部菜单栏里的图标，就能打开它。
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button onClick={handleUnderstood} className="w-full">
-            Understood, let&apos;s go!
+            知道了，开始使用
           </Button>
         </DialogFooter>
       </DialogContent>

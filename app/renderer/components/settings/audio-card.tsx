@@ -16,10 +16,10 @@ export default function AudioCard({
   onSliderChange,
 }: AudioCardProps) {
   return (
-    <SettingsCard title="Audio">
+    <SettingsCard title="声音">
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Break sound</Label>
+          <Label className="text-sm font-medium">提示音</Label>
           <SoundSelect
             value={settingsDraft.soundType}
             onChange={onSoundTypeChange}
@@ -27,7 +27,7 @@ export default function AudioCard({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Break sound volume</Label>
+          <Label className="text-sm font-medium">提示音音量</Label>
           <div className="px-2">
             <Slider
               min={0}

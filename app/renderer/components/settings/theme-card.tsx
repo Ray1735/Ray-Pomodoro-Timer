@@ -25,7 +25,7 @@ export default function ThemeCard({
           className="text-base font-semibold"
           style={{ color: settingsDraft.textColor }}
         >
-          Theme
+          主题
         </h3>
       </div>
       <div className="space-y-4">
@@ -35,7 +35,7 @@ export default function ThemeCard({
               className="text-sm font-medium"
               style={{ color: settingsDraft.textColor }}
             >
-              Primary color
+              主色
             </Label>
             <input
               className="w-20 h-10 rounded cursor-pointer border appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded"
@@ -53,7 +53,7 @@ export default function ThemeCard({
               className="text-sm font-medium"
               style={{ color: settingsDraft.textColor }}
             >
-              Text color
+              文字颜色
             </Label>
             <input
               className="w-20 h-10 rounded cursor-pointer border border-border appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded"
@@ -73,7 +73,7 @@ export default function ThemeCard({
           }}
           className="!bg-transparent hover:!bg-current/10 active:!bg-current/20"
         >
-          Reset
+          恢复默认
         </Button>
       </div>
     </div>

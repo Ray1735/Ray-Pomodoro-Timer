@@ -13,7 +13,7 @@ export default function AdvancedCard({
   onSwitchChange,
 }: AdvancedCardProps) {
   return (
-    <SettingsCard title="Advanced">
+    <SettingsCard title="高级">
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
           <Switch
@@ -23,7 +23,7 @@ export default function AdvancedCard({
             }
             disabled={settingsDraft.notificationType !== NotificationType.Popup}
           />
-          <Label>Immediately start breaks</Label>
+          <Label>到点直接开始休息（不弹出提醒条）</Label>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -33,7 +33,7 @@ export default function AdvancedCard({
               onSwitchChange("endBreakEnabled", checked)
             }
           />
-          <Label>Allow ending break early</Label>
+          <Label>允许提前结束休息</Label>
         </div>
       </div>
     </SettingsCard>
