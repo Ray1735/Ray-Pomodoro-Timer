@@ -1,10 +1,13 @@
 # 构建 BreakTimer 中文版（Apple 芯片 Mac）
 #
-# 每次推送到 zh-cn 分支时：先做类型检查、测试和代码规范检查；全部通过后，
-# 在 GitHub 官方的云端 Mac 上从这次提交的源码打包，计算校验值（SHA-256），
-# 生成构建来源证明，并发布到本仓库的 Releases 页面。
+# 推送到 zh-cn 分支时：
+#   1. check    —— 类型检查、单元测试、代码规范、格式检查
+#   2. build-mac —— 在 GitHub 官方云端 Mac 上从这次提交的源码打包 dmg，
+#                  校验签名、实际启动并截图预览。此任务只有只读权限。
+#   3. release  —— 计算校验值（SHA-256）、生成构建来源证明、发布到 Releases。
+#                  此任务有写权限，但不安装依赖、不运行项目里的任何代码。
 #
-# 用到的官方步骤都锁定到具体提交，防止被人改了标签后偷换内容。
+# 用到的官方步骤都锁定到具体提交，防止有人改了版本标签偷换内容。
 
 name: 构建中文版
 
@@ -18,12 +21,17 @@ permissions:
 
 concurrency:
   group: build-zh-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash # GitHub 会加上 -eo pipefail，管道里任何一步出错都会停下
 
 jobs:
   check:
-    name: 检查（类型、测试、代码规范）
+    name: 检查（类型、测试、代码规范、格式）
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,18 +54,18 @@ jobs:
       - name: 代码规范检查
         run: npm run lint
 
-      - name: 格式检查（仅提示，不阻断）
+      - name: 格式检查
         run: npm run format-check
-        continue-on-error: true
 
   build-mac:
     name: 打包 Mac 安装包（Apple 芯片）
     needs: check
     runs-on: macos-15
+    timeout-minutes: 40
     permissions:
-      contents: write # 创建 Release
-      id-token: write # 构建来源证明
-      attestations: write # 构建来源证明
+      contents: read
+    outputs:
+      version: ${{ steps.collect.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -74,7 +82,7 @@ jobs:
       - name: 编译源码
         run: npm run build
 
-      # 没有苹果开发者证书，用本地签名（ad-hoc）。不做苹果公证，
+      # 没有苹果开发者证书，用本地签名（ad-hoc），不做苹果公证。
       # 首次打开需要在"系统设置 → 隐私与安全性"里点"仍要打开"。
       - name: 打包 dmg（本地签名）
         run: >-
@@ -87,44 +95,122 @@ jobs:
         run: |
           APP="release/mac-arm64/BreakTimer.app"
           codesign --verify --deep --strict --verbose=2 "$APP"
-          codesign -dv "$APP" 2>&1 | grep -E "^(Identifier|Signature|Format)"
+          INFO="$(codesign -dv "$APP" 2>&1)"
+          echo "$INFO" | grep -E "^(Identifier|Signature|Format)"
+          echo "$INFO" | grep -q "^Signature=adhoc"
 
-      - name: 启动测试（运行 25 秒不崩溃）并截图
+      # 用测试配置启动：20 秒后到点提醒；关掉"智能识别休息"（云端机器
+      # 没人操作，会被当成一直在休息）；标记为已初始化，跳过欢迎弹窗。
+      - name: 启动测试，并截取设置页、提醒条、全屏休息三张预览图
         run: |
           APP="release/mac-arm64/BreakTimer.app"
-          "$APP/Contents/MacOS/BreakTimer" > smoke.log 2>&1 &
+          BIN="$APP/Contents/MacOS/BreakTimer"
+          CFG_DIR="$HOME/Library/Application Support/BreakTimer"
+          mkdir -p "$CFG_DIR"
+          cat > "$CFG_DIR/config.json" <<'EOF'
+          {
+            "appInitialized": true,
+            "settingsVersion": 1,
+            "settings": {
+              "autoLaunch": false,
+              "breakFrequencySeconds": 20,
+              "workingHoursEnabled": false,
+              "idleResetEnabled": false
+            }
+          }
+          EOF
+
+          alive() {
+            if ! kill -0 "$PID" 2>/dev/null; then
+              echo "应用崩溃了："
+              cat smoke.log
+              exit 1
+            fi
+          }
+          shot() {
+            screencapture -x "$1" || echo "截图失败：$1（不影响安装包）"
+          }
+
+          "$BIN" > smoke.log 2>&1 &
           PID=$!
-          sleep 25
-          if ! kill -0 "$PID" 2>/dev/null; then
-            echo "应用启动后崩溃："
-            cat smoke.log
-            exit 1
-          fi
-          echo "应用运行正常"
-          screencapture -x screenshot-settings.png || echo "截图失败（不影响安装包）"
+          sleep 8
+          alive
+
+          # 再启动一次：应用检测到已在运行，会打开设置窗口
+          "$BIN" > /dev/null 2>&1 &
+          sleep 5
+          alive
+          shot preview-1-settings.png
+
+          # 到点后顶部出现提醒条（开始休息 / 推迟 X 分钟）
+          sleep 15
+          alive
+          shot preview-2-reminder.png
+
+          # 提醒条 1 分钟等待 + 1 分钟倒计时后，自动进入全屏休息
+          sleep 110
+          alive
+          shot preview-3-break.png
+
+          echo "应用全程运行正常"
           kill "$PID" || true
+
+      - name: 整理产物
+        id: collect
+        run: |
+          mkdir -p out
+          cp release/BreakTimer.dmg out/BreakTimer-zh-CN-arm64.dmg
+          for f in preview-*.png; do
+            if [ -f "$f" ]; then cp "$f" out/; fi
+          done
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          ls -la out
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: breaktimer-zh-cn
+          path: out/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: 发布（校验值 + 构建来源证明）
+    needs: build-mac
+    if: github.ref == 'refs/heads/zh-cn'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # 创建 Release
+      id-token: write # 构建来源证明
+      attestations: write # 构建来源证明
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: breaktimer-zh-cn
+          path: out
 
       - name: 计算校验值（SHA-256）
         id: hash
         run: |
-          cd release
-          mv BreakTimer.dmg BreakTimer-zh-CN-arm64.dmg
-          shasum -a 256 BreakTimer-zh-CN-arm64.dmg | tee BreakTimer-zh-CN-arm64.dmg.sha256
+          cd out
+          sha256sum BreakTimer-zh-CN-arm64.dmg | tee BreakTimer-zh-CN-arm64.dmg.sha256
           echo "sha256=$(cut -d' ' -f1 BreakTimer-zh-CN-arm64.dmg.sha256)" >> "$GITHUB_OUTPUT"
 
       - name: 生成构建来源证明
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: release/BreakTimer-zh-CN-arm64.dmg
+          subject-path: out/BreakTimer-zh-CN-arm64.dmg
 
       - name: 发布到 Releases
         env:
           GH_TOKEN: ${{ github.token }}
           SHA256: ${{ steps.hash.outputs.sha256 }}
+          VERSION: ${{ needs.build-mac.outputs.version }}
         run: |
-          VERSION="$(node -p "require('./package.json').version")"
           TAG="zh-cn-v${VERSION}-build${GITHUB_RUN_NUMBER}"
+          if [ "${GITHUB_RUN_ATTEMPT}" != "1" ]; then TAG="${TAG}.${GITHUB_RUN_ATTEMPT}"; fi
           RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
           cat > notes.md <<EOF
           BreakTimer 中文版，基于原作者 v${VERSION}，只适用于 Apple 芯片（M 系列）的 Mac。
 
@@ -138,17 +224,28 @@ jobs:
           shasum -a 256 ~/Downloads/BreakTimer-zh-CN-arm64.dmg
           \`\`\`
 
+          装了 GitHub 命令行工具的话，还可以验证构建来源证明：
+
+          \`\`\`
+          gh attestation verify ~/Downloads/BreakTimer-zh-CN-arm64.dmg -R ${GITHUB_REPOSITORY}
+          \`\`\`
+
           **构建来源**：由 GitHub 官方云端 Mac 从提交 \`${GITHUB_SHA}\` 自动编译，
           完整记录见 ${RUN_URL}
+
+          **预览图**：下方 preview-*.png 是这次安装包在云端 Mac 上实际运行时的截图。
 
           **首次打开**：因为没有苹果开发者签名，第一次打开会被系统拦下。
           到"系统设置 → 隐私与安全性"，在页面下方点"仍要打开"即可，只需一次。
           EOF
 
-          ASSETS=(release/BreakTimer-zh-CN-arm64.dmg release/BreakTimer-zh-CN-arm64.dmg.sha256)
-          if [ -f screenshot-settings.png ]; then ASSETS+=(screenshot-settings.png); fi
+          ASSETS=(out/BreakTimer-zh-CN-arm64.dmg out/BreakTimer-zh-CN-arm64.dmg.sha256)
+          for f in out/preview-*.png; do
+            if [ -f "$f" ]; then ASSETS+=("$f"); fi
+          done
 
           gh release create "$TAG" "${ASSETS[@]}" \
+            --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "BreakTimer 中文版 v${VERSION}（第 ${GITHUB_RUN_NUMBER} 次构建）" \
             --notes-file notes.md

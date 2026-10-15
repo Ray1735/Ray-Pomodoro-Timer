@@ -31,7 +31,7 @@ export default function SettingsHeader(props: Props) {
         >
           <TabsTrigger value="break-settings">常规</TabsTrigger>
           <TabsTrigger value="working-hours">工作时间</TabsTrigger>
-          <TabsTrigger value="customization">外观</TabsTrigger>
+          <TabsTrigger value="customization">个性化</TabsTrigger>
           {processEnv.SNAP === undefined && (
             <TabsTrigger value="system">系统</TabsTrigger>
           )}

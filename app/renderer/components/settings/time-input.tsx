@@ -209,7 +209,7 @@ export default function TimeInput({
   return (
     <div
       className={cn(
-        "inline-block border border-input bg-transparent dark:bg-input/30 rounded-md px-3 py-2 text-sm shadow-xs focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+        "inline-block whitespace-nowrap border border-input bg-transparent dark:bg-input/30 rounded-md px-3 py-2 text-sm shadow-xs focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
         disabled && "opacity-50 cursor-not-allowed",
         className,
       )}

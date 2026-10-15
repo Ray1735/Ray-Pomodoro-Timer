@@ -35,7 +35,7 @@ export default function ThemeCard({
               className="text-sm font-medium"
               style={{ color: settingsDraft.textColor }}
             >
-              主色
+              背景色
             </Label>
             <input
               className="w-20 h-10 rounded cursor-pointer border appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded"

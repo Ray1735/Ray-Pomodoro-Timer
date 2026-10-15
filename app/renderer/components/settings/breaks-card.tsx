@@ -51,9 +51,7 @@ export default function BreaksCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NotificationType.Popup}>
-                  弹窗休息
-                </SelectItem>
+                <SelectItem value={NotificationType.Popup}>弹窗休息</SelectItem>
                 <SelectItem value={NotificationType.Notification}>
                   普通通知
                 </SelectItem>

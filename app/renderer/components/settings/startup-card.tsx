@@ -12,7 +12,7 @@ export default function StartupCard({
 }: StartupCardProps) {
   return (
     <SettingsCard
-      title="开机自动启动"
+      title="登录时自动启动"
       helperText="登录电脑时自动启动 BreakTimer。"
       toggle={{
         checked: settingsDraft.autoLaunch,

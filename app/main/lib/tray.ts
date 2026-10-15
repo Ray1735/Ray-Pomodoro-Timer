@@ -70,7 +70,7 @@ function formatCompactDuration(seconds: number): string {
   const minutes = totalMinutes % 60;
 
   if (hours > 0) {
-    return minutes > 0 ? `${hours}时${minutes}分` : `${hours}小时`;
+    return minutes > 0 ? `${hours}小时${minutes}分` : `${hours}小时`;
   }
 
   return `${totalMinutes}分`;
@@ -176,6 +176,7 @@ export function buildTray(): void {
     dialog.showMessageBox({
       title: "关于",
       type: "info",
+      buttons: ["好"],
       message: `BreakTimer`,
       detail: `版本：${packageJson.version}（中文版）\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/breaktimer-app\n\n依据 GPL-3.0-or-later 许可证发布。`,
     });
@@ -218,7 +219,7 @@ export function buildTray(): void {
       enabled: false,
     },
     {
-      label: `已暂停，还剩 ${getDisableTimeRemaining()}`,
+      label: `已暂停，剩余时间：${getDisableTimeRemaining()}`,
       visible: disableEndTime !== null && !breaksEnabled,
       enabled: false,
     },
@@ -247,7 +248,7 @@ export function buildTray(): void {
         { label: "2 小时", click: () => disableBreaksFor(2 * 60 * 60 * 1000) },
         { label: "4 小时", click: () => disableBreaksFor(4 * 60 * 60 * 1000) },
         {
-          label: "今天剩下的时间",
+          label: "到今天结束",
           click: () => {
             const now = new Date();
             const endOfDay = new Date(

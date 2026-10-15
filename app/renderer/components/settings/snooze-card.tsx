@@ -56,7 +56,7 @@ export default function SnoozeCard({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">每次最多推迟</Label>
+          <Label className="text-sm font-medium">最多连续推迟</Label>
           <Select
             value={settingsDraft.postponeLimit.toString()}
             onValueChange={onPostponeLimitChange}

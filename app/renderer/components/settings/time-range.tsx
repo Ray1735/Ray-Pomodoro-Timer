@@ -109,7 +109,7 @@ export default function TimeRange({
                   size="sm"
                   variant="ghost"
                   disabled={disabled}
-                  title="复制到其他日子"
+                  title="复制到其他天"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
