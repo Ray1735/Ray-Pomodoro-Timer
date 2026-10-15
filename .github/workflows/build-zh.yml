@@ -1,0 +1,154 @@
+# 构建 BreakTimer 中文版（Apple 芯片 Mac）
+#
+# 每次推送到 zh-cn 分支时：先做类型检查、测试和代码规范检查；全部通过后，
+# 在 GitHub 官方的云端 Mac 上从这次提交的源码打包，计算校验值（SHA-256），
+# 生成构建来源证明，并发布到本仓库的 Releases 页面。
+#
+# 用到的官方步骤都锁定到具体提交，防止被人改了标签后偷换内容。
+
+name: 构建中文版
+
+on:
+  push:
+    branches: [zh-cn]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-zh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 检查（类型、测试、代码规范）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.13.0"
+          cache: npm
+
+      - name: 安装依赖（按锁定文件逐个校验）
+        run: npm ci
+
+      - name: 类型检查
+        run: npm run typecheck
+
+      - name: 单元测试
+        run: npm test
+
+      - name: 代码规范检查
+        run: npm run lint
+
+      - name: 格式检查（仅提示，不阻断）
+        run: npm run format-check
+        continue-on-error: true
+
+  build-mac:
+    name: 打包 Mac 安装包（Apple 芯片）
+    needs: check
+    runs-on: macos-15
+    permissions:
+      contents: write # 创建 Release
+      id-token: write # 构建来源证明
+      attestations: write # 构建来源证明
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22.13.0"
+          cache: npm
+
+      - name: 安装依赖（按锁定文件逐个校验）
+        run: npm ci
+
+      - name: 编译源码
+        run: npm run build
+
+      # 没有苹果开发者证书，用本地签名（ad-hoc）。不做苹果公证，
+      # 首次打开需要在"系统设置 → 隐私与安全性"里点"仍要打开"。
+      - name: 打包 dmg（本地签名）
+        run: >-
+          npx --no-install electron-builder build --mac --publish never
+          --config.mac.target.target=dmg
+          --config.mac.target.arch=arm64
+          --config.mac.identity=-
+
+      - name: 检查签名完整
+        run: |
+          APP="release/mac-arm64/BreakTimer.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dv "$APP" 2>&1 | grep -E "^(Identifier|Signature|Format)"
+
+      - name: 启动测试（运行 25 秒不崩溃）并截图
+        run: |
+          APP="release/mac-arm64/BreakTimer.app"
+          "$APP/Contents/MacOS/BreakTimer" > smoke.log 2>&1 &
+          PID=$!
+          sleep 25
+          if ! kill -0 "$PID" 2>/dev/null; then
+            echo "应用启动后崩溃："
+            cat smoke.log
+            exit 1
+          fi
+          echo "应用运行正常"
+          screencapture -x screenshot-settings.png || echo "截图失败（不影响安装包）"
+          kill "$PID" || true
+
+      - name: 计算校验值（SHA-256）
+        id: hash
+        run: |
+          cd release
+          mv BreakTimer.dmg BreakTimer-zh-CN-arm64.dmg
+          shasum -a 256 BreakTimer-zh-CN-arm64.dmg | tee BreakTimer-zh-CN-arm64.dmg.sha256
+          echo "sha256=$(cut -d' ' -f1 BreakTimer-zh-CN-arm64.dmg.sha256)" >> "$GITHUB_OUTPUT"
+
+      - name: 生成构建来源证明
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: release/BreakTimer-zh-CN-arm64.dmg
+
+      - name: 发布到 Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA256: ${{ steps.hash.outputs.sha256 }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="zh-cn-v${VERSION}-build${GITHUB_RUN_NUMBER}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          cat > notes.md <<EOF
+          BreakTimer 中文版，基于原作者 v${VERSION}，只适用于 Apple 芯片（M 系列）的 Mac。
+
+          **校验值（SHA-256）**
+
+          \`${SHA256}\`
+
+          下载后在"终端"里运行下面这行，输出的一串字符应与上面完全一致：
+
+          \`\`\`
+          shasum -a 256 ~/Downloads/BreakTimer-zh-CN-arm64.dmg
+          \`\`\`
+
+          **构建来源**：由 GitHub 官方云端 Mac 从提交 \`${GITHUB_SHA}\` 自动编译，
+          完整记录见 ${RUN_URL}
+
+          **首次打开**：因为没有苹果开发者签名，第一次打开会被系统拦下。
+          到"系统设置 → 隐私与安全性"，在页面下方点"仍要打开"即可，只需一次。
+          EOF
+
+          ASSETS=(release/BreakTimer-zh-CN-arm64.dmg release/BreakTimer-zh-CN-arm64.dmg.sha256)
+          if [ -f screenshot-settings.png ]; then ASSETS+=(screenshot-settings.png); fi
+
+          gh release create "$TAG" "${ASSETS[@]}" \
+            --target "$GITHUB_SHA" \
+            --title "BreakTimer 中文版 v${VERSION}（第 ${GITHUB_RUN_NUMBER} 次构建）" \
+            --notes-file notes.md
