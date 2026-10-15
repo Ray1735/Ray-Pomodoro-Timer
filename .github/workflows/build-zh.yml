@@ -143,12 +143,13 @@ jobs:
           shot preview-1-settings.png
 
           # 到点后顶部出现提醒条（开始休息 / 推迟 X 分钟）
-          sleep 15
+          sleep 20
           alive
           shot preview-2-reminder.png
 
           # 提醒条 1 分钟等待 + 1 分钟倒计时后，自动进入全屏休息
-          sleep 110
+          # （默认休息 2 分钟，留出余量确保截到全屏画面）
+          sleep 125
           alive
           shot preview-3-break.png
 
