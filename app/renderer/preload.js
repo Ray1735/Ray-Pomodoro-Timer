@@ -9,7 +9,9 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 process.once("loaded", () => {
-  contextBridge.exposeInMainWorld("processEnv", { ...process.env });
+  // Chinese fork hardening: the UI only reads SNAP, so don't hand the
+  // renderer the whole environment (which may contain unrelated secrets).
+  contextBridge.exposeInMainWorld("processEnv", { SNAP: process.env.SNAP });
   contextBridge.exposeInMainWorld("processPlatform", process.platform);
   contextBridge.exposeInMainWorld("ipcRenderer", {
     invokeBreakPostpone: (action) => {

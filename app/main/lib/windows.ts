@@ -23,6 +23,15 @@ const getBrowserWindowUrl = (
   }
 };
 
+// Chinese fork hardening: every window only shows the app's own bundled
+// pages, so refuse any navigation away from them and any new windows.
+function lockNavigation(win: BrowserWindow): void {
+  win.webContents.on("will-navigate", (event) => {
+    event.preventDefault();
+  });
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+}
+
 export function getWindows(): BrowserWindow[] {
   const windows = [];
   if (settingsWindow !== null) {
@@ -59,6 +68,7 @@ export function createSettingsWindow(): void {
     },
   });
 
+  lockNavigation(settingsWindow);
   settingsWindow.loadURL(getBrowserWindowUrl("settings"));
 
   // Force enable devtools keyboard shortcuts
@@ -94,6 +104,7 @@ export function createSoundsWindow(): void {
     },
   });
 
+  lockNavigation(soundsWindow);
   soundsWindow.loadURL(getBrowserWindowUrl("sounds"));
 }
 
@@ -145,6 +156,7 @@ export function createBreakWindows(): void {
       app.dock?.hide();
     }
 
+    lockNavigation(breakWindow);
     breakWindow.loadURL(getBrowserWindowUrl("break", windowIndex));
 
     breakWindow.on("ready-to-show", () => {
