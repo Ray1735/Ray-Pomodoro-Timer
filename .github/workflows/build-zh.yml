@@ -131,6 +131,36 @@ jobs:
             screencapture -x "$1" || echo "截图失败：$1（不影响安装包）"
           }
 
+          # 联网监测：整个测试期间，每秒检查一次 BreakTimer 所有进程
+          # （含各个辅助进程）有没有任何网络连接，记到 net.log
+          : > net.log
+          watch_net() {
+            while true; do
+              PIDS="$(pgrep -f "BreakTimer.app/Contents" | paste -sd, - || true)"
+              if [ -n "$PIDS" ]; then
+                lsof -nP -a -i -p "$PIDS" 2>/dev/null | tail -n +2 >> net.log || true
+              fi
+              sleep 1
+            done
+          }
+
+          # 先确认监测手段本身有效：一个监听端口的测试进程必须能被查到
+          nc -l 54321 > /dev/null 2>&1 &
+          NC=$!
+          sleep 1
+          NC_SOCKETS="$(lsof -nP -a -i -p "$NC" 2>/dev/null || true)"
+          kill "$NC" 2>/dev/null || true
+          case "$NC_SOCKETS" in
+            *54321*) echo "联网监测自检通过" ;;
+            *)
+              echo "联网监测自检失败：查不到测试进程的网络连接"
+              exit 1
+              ;;
+          esac
+
+          watch_net &
+          WATCH=$!
+
           "$BIN" > smoke.log 2>&1 &
           PID=$!
           sleep 8
@@ -155,6 +185,21 @@ jobs:
 
           echo "应用全程运行正常"
           kill "$PID" || true
+          kill "$WATCH" || true
+
+          # 离线验证：不允许有任何网络连接，也不允许有被拦下的联网尝试
+          if [ -s net.log ]; then
+            echo "检测到网络连接（不允许）："
+            sort -u net.log
+            exit 1
+          fi
+          BLOCKED="$(cat smoke.log "$HOME/Library/Logs/BreakTimer/main.log" 2>/dev/null | grep "Blocked network request" || true)"
+          if [ -n "$BLOCKED" ]; then
+            echo "应用尝试过联网（已被拦下，但不允许出现）："
+            echo "$BLOCKED"
+            exit 1
+          fi
+          echo "离线验证通过：测试全程，BreakTimer 所有进程都没有任何网络连接，也没有联网尝试"
 
       - name: 整理产物
         id: collect
@@ -233,6 +278,10 @@ jobs:
 
           **构建来源**：由 GitHub 官方云端 Mac 从提交 \`${GITHUB_SHA}\` 自动编译，
           完整记录见 ${RUN_URL}
+
+          **离线**：应用不含任何联网功能，并在程序层面拦截所有联网请求和域名解析。
+          这次安装包在云端 Mac 上完整运行了约 3 分钟（设置页 → 到点提醒 → 全屏休息），
+          期间每秒检查一次它的所有进程，没有任何网络连接，也没有联网尝试。
 
           **预览图**：下方 preview-*.png 是这次安装包在云端 Mac 上实际运行时的截图。
 

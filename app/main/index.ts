@@ -4,9 +4,12 @@ import log from "electron-log";
 import { setAutoLauch } from "./lib/auto-launch";
 import { initBreaks } from "./lib/breaks";
 import "./lib/ipc";
+import { blockNetworkBeforeReady, blockNetworkRequests } from "./lib/offline";
 import { getAppInitialized } from "./lib/store";
 import { initTray } from "./lib/tray";
 import { createSettingsWindow, createSoundsWindow } from "./lib/windows";
+
+blockNetworkBeforeReady();
 
 const gotTheLock = app.requestSingleInstanceLock();
 
@@ -59,6 +62,8 @@ app.on("window-all-closed", () => {
 });
 
 app.on("ready", async () => {
+  blockNetworkRequests();
+
   if (
     process.env.NODE_ENV === "development" ||
     process.env.DEBUG_PROD === "true"
