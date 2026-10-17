@@ -99,7 +99,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP"
           INFO="$(codesign -dv "$APP" 2>&1)"
           echo "$INFO" | grep -E "^(Identifier|Signature|Format)"
-          echo "$INFO" | grep -q "^Signature=adhoc"
+          grep -q "^Signature=adhoc" <<< "$INFO"
 
       # 用测试配置启动：20 秒后到点提醒；关掉"智能识别休息"（云端机器
       # 没人操作，会被当成一直在休息）；标记为已初始化，跳过欢迎弹窗。
@@ -124,7 +124,7 @@ jobs:
           # 把关键结果写成 GitHub 注释（annotation），方便在网页和接口里直接查看
           annotate() {
             local msg
-            msg="$(head -c 4000 | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"} {print}')"
+            msg="$({ head -c 4000; cat > /dev/null; } | tr -d '\r' | sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}')"
             echo "::$1 title=$2::$msg"
           }
 
@@ -142,7 +142,7 @@ jobs:
 
           # ① 全程抓包：抓取本机所有网卡（含本机回环）的每一个数据包，
           #    并标注它来自哪个进程（macOS 的 pktap 功能）
-          sudo tcpdump -i pktap,all -kNP -n -l > pktap.txt 2> pktap.err &
+          sudo tcpdump -i pktap,all -kNP -n -l -B 16384 > pktap.txt 2> pktap.err &
           sleep 3
 
           # 阳性对照：用 curl 真实联网一次，抓包结果里必须能认出这个 curl
@@ -159,7 +159,7 @@ jobs:
             exit 1
           fi
           echo "抓包自检通过：能识别出某个进程的联网流量"
-          { echo "curl 进程号 ${CURL}，抓到它的数据包 $(grep -Ec "proc [^,)]*:${CURL}[,): ]" pktap.txt) 个，样例："; grep -E "proc [^,)]*:${CURL}[,): ]" pktap.txt | head -3; } | annotate notice "抓包自检通过"
+          { echo "curl 进程号 ${CURL}，抓到它的数据包 $(grep -Ec "proc [^,)]*:${CURL}[,): ]" pktap.txt) 个，样例："; grep -m 3 -E "proc [^,)]*:${CURL}[,): ]" pktap.txt; } | annotate notice "抓包自检通过"
 
           # ② 每秒记录番茄钟的所有进程号（含各个辅助进程），
           #    同时用 lsof 查看它们有没有打开网络连接
@@ -186,6 +186,7 @@ jobs:
 
           # 再启动一次：应用检测到已在运行，会打开设置窗口
           "$BIN" > /dev/null 2>&1 &
+          echo "$!" >> pids.log
           sleep 5
           alive
           shot preview-1-settings.png
@@ -212,6 +213,21 @@ jobs:
           echo "$PID" >> pids.log
           sort -u pids.log | grep -E '^[0-9]+$' > pids.txt || true
           echo "抓到数据包 $(wc -l < pktap.txt) 个，番茄钟进程 $(wc -l < pids.txt) 个"
+          cat pktap.err
+
+          # 检查本身必须完整：要看到辅助进程（网络请求实际由它们发出），
+          # 抓包也不能有被内核丢弃的包，否则结论不可信
+          PID_COUNT="$(wc -l < pids.txt | tr -d ' ')"
+          if [ "$PID_COUNT" -lt 3 ]; then
+            echo "只监测到 ${PID_COUNT} 个番茄钟进程，没看到辅助进程，检查不完整"
+            { echo "进程数 ${PID_COUNT}"; cat pids.txt; } | annotate error "监测不完整"
+            exit 1
+          fi
+          if ! grep -q "^0 packets dropped by kernel" pktap.err; then
+            echo "抓包有丢包或没有正常结束，检查不完整"
+            annotate error "抓包不完整" < pktap.err
+            exit 1
+          fi
 
           if [ -s net.log ]; then
             echo "lsof 发现网络连接（不允许）："
@@ -228,8 +244,8 @@ jobs:
           NAME_HITS="$(grep -F "番茄钟" pktap.txt || true)"
           if [ -n "${HITS}${NAME_HITS}" ]; then
             echo "抓包发现来自番茄钟进程的数据包（不允许）："
-            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | head -50
-            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | head -30 | annotate error "抓包发现番茄钟的数据包"
+            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | sed -n '1,50p'
+            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | sed -n '1,30p' | annotate error "抓包发现番茄钟的数据包"
             exit 1
           fi
 
@@ -245,6 +261,7 @@ jobs:
           {
             echo "抓到数据包 $(wc -l < pktap.txt) 个（含云端机器自身流量），番茄钟进程 $(wc -l < pids.txt) 个：$(paste -sd' ' pids.txt)"
             echo "来自这些进程的数据包：0 个；lsof 网络连接：0 个；被拦下的联网尝试：0 次"
+            grep "dropped by kernel" pktap.err || true
           } | annotate notice "离线验证通过"
 
       - name: 整理产物

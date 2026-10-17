@@ -24,12 +24,14 @@ const getBrowserWindowUrl = (
 };
 
 // Chinese fork hardening: every window only shows the app's own bundled
-// pages, so refuse any navigation away from them and any new windows.
+// pages, so refuse any navigation away from them and any new windows, and
+// don't let WebRTC send UDP outside the (dead) proxy set up in offline.ts.
 function lockNavigation(win: BrowserWindow): void {
   win.webContents.on("will-navigate", (event) => {
     event.preventDefault();
   });
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.setWebRTCIPHandlingPolicy("disable_non_proxied_udp");
 }
 
 export function getWindows(): BrowserWindow[] {

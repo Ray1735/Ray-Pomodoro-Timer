@@ -122,14 +122,16 @@ function applyForkMigrations(): void {
   if (version >= ZH_SETTINGS_VERSION) return;
 
   const settings = store.get("settings") as Partial<Settings>;
-  store.set("settings", {
+  const updated: Partial<Settings> = {
     ...settings,
     // The menu bar now shows a progress ring instead of minutes by default.
     trayTextEnabled: false,
-    // Breaks now cover the whole screen: upgrade the old 70% default.
-    backdropOpacity:
-      settings.backdropOpacity === 0.7 ? 1 : settings.backdropOpacity,
-  } as Settings);
+  };
+  // Breaks now cover the whole screen: upgrade the old 70% default.
+  if (settings.backdropOpacity === 0.7) {
+    updated.backdropOpacity = 1;
+  }
+  store.set("settings", updated as Settings);
   store.set("zhSettingsVersion", ZH_SETTINGS_VERSION);
 }
 

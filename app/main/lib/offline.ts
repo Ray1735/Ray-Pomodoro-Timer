@@ -9,11 +9,12 @@ import { disableNodeNetworking } from "./offline-node";
 //
 // Browser engine (renderer windows and Electron's `net` module):
 // - every hostname lookup fails, so no server address can be resolved;
-// - all traffic is forced through a proxy at 127.0.0.1:9 where nothing
-//   listens, so even requests to a raw IP address go nowhere (loopback
-//   included, via "<-loopback>");
-// - WebRTC may not send UDP outside that (dead) proxy;
+// - web requests (http, https, ws, wss) are forced through a proxy at
+//   127.0.0.1:9 where nothing listens, so even requests to a raw IP address
+//   go nowhere (loopback included, via "<-loopback>");
 // - every http(s) / ws(s) request is cancelled and logged;
+// - each window's WebRTC may not send UDP outside that dead proxy (set per
+//   window in windows.ts);
 // - the spellchecker is off, so it never downloads dictionaries.
 //
 // Node.js (main process): TCP, UDP, DNS and fetch are disabled, see
@@ -36,10 +37,6 @@ export function blockNetworkBeforeReady(): void {
   app.commandLine.appendSwitch("host-resolver-rules", "MAP * ~NOTFOUND");
   app.commandLine.appendSwitch("proxy-server", "127.0.0.1:9");
   app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>");
-  app.commandLine.appendSwitch(
-    "force-webrtc-ip-handling-policy",
-    "disable_non_proxied_udp",
-  );
 }
 
 // Must run once the app is ready, before any window is created.

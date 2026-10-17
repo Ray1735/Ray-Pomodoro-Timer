@@ -94,6 +94,8 @@ app.on("ready", async () => {
   if (!appInitialized) {
     if (process.env.NODE_ENV !== "development") {
       setAutoLauch(true);
+      // A fresh install creates its login item here; nothing to refresh.
+      setLoginItemRefreshed();
     }
     // Show settings window on first launch instead of notification
     createSettingsWindow();
@@ -101,14 +103,16 @@ app.on("ready", async () => {
   } else if (
     process.env.NODE_ENV !== "development" &&
     getSettings().autoLaunch &&
-    !getLoginItemRefreshed()
+    !getLoginItemRefreshed() &&
+    app.isInApplicationsFolder()
   ) {
     // App has been initialized before, don't show settings automatically.
     // Chinese fork: the app was renamed (BreakTimer.app → 番茄钟.app), so the
-    // existing login item points at the old app. Re-create it once.
+    // existing login item points at the old app. Re-create it once it has
+    // worked; if the user declines the permission prompt, try again next time.
     refreshAutoLaunch()
-      .catch((error) => log.warn(`Could not refresh login item: ${error}`))
-      .finally(() => setLoginItemRefreshed());
+      .then(() => setLoginItemRefreshed())
+      .catch((error) => log.warn(`Could not refresh login item: ${error}`));
   }
 
   initBreaks();
