@@ -141,6 +141,9 @@ export function createBreakWindows(): void {
       focusable: false,
       transparent: true,
       hasShadow: false,
+      // Chinese fork: without this, macOS keeps frameless windows below the
+      // menu bar, so the full-screen break couldn't cover it.
+      enableLargerThanScreen: true,
       webPreferences: {
         devTools: true,
         preload: path.join(__dirname, "../../renderer/preload.js"),
