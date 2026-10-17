@@ -190,6 +190,11 @@ export default function Break() {
             breakTitle={settings.breakTitle}
             endBreakEnabled={settings.endBreakEnabled}
             onEndBreak={handleEndBreak}
+            postponeBreakEnabled={
+              settings.postponeBreakEnabled && allowPostpone
+            }
+            postponeLengthSeconds={settings.postponeLengthSeconds}
+            onPostponeBreak={handlePostponeBreak}
             settings={settings}
             textColor={settings.textColor}
             isClosing={closing}

@@ -107,8 +107,33 @@ const store = new Store({
     appInitialized: false,
     settingsVersion: 0,
     disableEndTime: null,
+    // Chinese fork bookkeeping, kept apart from the original settingsVersion so
+    // future upstream migrations don't collide with ours.
+    zhSettingsVersion: 0,
+    zhLoginItemRefreshed: false,
   },
 });
+
+// Chinese fork: one-time adjustments for people upgrading from earlier builds.
+const ZH_SETTINGS_VERSION = 1;
+
+function applyForkMigrations(): void {
+  const version = store.get("zhSettingsVersion") as number;
+  if (version >= ZH_SETTINGS_VERSION) return;
+
+  const settings = store.get("settings") as Partial<Settings>;
+  store.set("settings", {
+    ...settings,
+    // The menu bar now shows a progress ring instead of minutes by default.
+    trayTextEnabled: false,
+    // Breaks now cover the whole screen: upgrade the old 70% default.
+    backdropOpacity:
+      settings.backdropOpacity === 0.7 ? 1 : settings.backdropOpacity,
+  } as Settings);
+  store.set("zhSettingsVersion", ZH_SETTINGS_VERSION);
+}
+
+applyForkMigrations();
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateSettings(settings: any): Settings {
@@ -204,6 +229,14 @@ export function getAppInitialized(): boolean {
 
 export function setAppInitialized(): void {
   store.set({ appInitialized: true });
+}
+
+export function getLoginItemRefreshed(): boolean {
+  return store.get("zhLoginItemRefreshed") as boolean;
+}
+
+export function setLoginItemRefreshed(): void {
+  store.set({ zhLoginItemRefreshed: true });
 }
 
 export function setBreaksEnabled(breaksEnabled: boolean): void {

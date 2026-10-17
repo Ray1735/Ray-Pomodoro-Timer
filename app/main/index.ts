@@ -1,11 +1,19 @@
+// Must stay the first import: keeps the settings folder at its original
+// location now that the app has a Chinese name.
+import "./lib/user-data-path";
 import { app } from "electron";
 import electronDebug from "electron-debug";
 import log from "electron-log";
-import { setAutoLauch } from "./lib/auto-launch";
+import { refreshAutoLaunch, setAutoLauch } from "./lib/auto-launch";
 import { initBreaks } from "./lib/breaks";
 import "./lib/ipc";
 import { blockNetworkBeforeReady, blockNetworkRequests } from "./lib/offline";
-import { getAppInitialized } from "./lib/store";
+import {
+  getAppInitialized,
+  getLoginItemRefreshed,
+  getSettings,
+  setLoginItemRefreshed,
+} from "./lib/store";
 import { initTray } from "./lib/tray";
 import { createSettingsWindow, createSoundsWindow } from "./lib/windows";
 
@@ -90,8 +98,17 @@ app.on("ready", async () => {
     // Show settings window on first launch instead of notification
     createSettingsWindow();
     // Don't set app as initialized yet - we'll do that after the user dismisses the modal
-  } else {
-    // App has been initialized before, don't show settings automatically
+  } else if (
+    process.env.NODE_ENV !== "development" &&
+    getSettings().autoLaunch &&
+    !getLoginItemRefreshed()
+  ) {
+    // App has been initialized before, don't show settings automatically.
+    // Chinese fork: the app was renamed (BreakTimer.app → 番茄钟.app), so the
+    // existing login item points at the old app. Re-create it once.
+    refreshAutoLaunch()
+      .catch((error) => log.warn(`Could not refresh login item: ${error}`))
+      .finally(() => setLoginItemRefreshed());
   }
 
   initBreaks();

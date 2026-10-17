@@ -1,4 +1,4 @@
-import { app, dialog, Menu, Tray } from "electron";
+import { app, dialog, Menu, nativeImage, NativeImage, Tray } from "electron";
 import log from "electron-log";
 import moment from "moment";
 import path from "path";
@@ -7,11 +7,18 @@ import { TrayTextMode } from "../../types/settings";
 import {
   checkIdle,
   checkInWorkingHours,
+  getBreakScheduledAt,
   getBreakTime,
   getTimeSinceLastCompletedBreak,
   isHavingBreak,
   startBreakNow,
 } from "./breaks";
+import {
+  drawProgressRing,
+  progressStep,
+  RING_SIZE_PX,
+  RING_STEPS,
+} from "./tray-progress";
 import {
   getDisableEndTime,
   getSettings,
@@ -22,6 +29,51 @@ import { closeBreakWindows, createSettingsWindow } from "./windows";
 
 let tray: Tray;
 let lastMinsLeft = 0;
+
+// Chinese fork: menu bar progress ring (macOS). `shownRingStep` is the step
+// currently drawn, or null while the original icon is shown.
+let defaultIconPath = "";
+let shownRingStep: number | null = null;
+const ringImages = new Map<number, NativeImage>();
+
+function getProgressRingStep(): number | null {
+  if (process.platform !== "darwin") return null;
+
+  const settings = getSettings();
+  if (!settings.trayProgressEnabled || !settings.breaksEnabled) return null;
+  if (!checkInWorkingHours() || isHavingBreak() || checkIdle()) return null;
+
+  const breakTime = getBreakTime();
+  const scheduledAt = getBreakScheduledAt();
+  if (!breakTime || !scheduledAt) return null;
+
+  const totalMs = breakTime.diff(scheduledAt, "milliseconds");
+  if (totalMs <= 0) return null;
+
+  const leftMs = breakTime.diff(moment(), "milliseconds");
+  return progressStep(leftMs / totalMs);
+}
+
+function getRingImage(step: number): NativeImage {
+  let image = ringImages.get(step);
+  if (!image) {
+    image = nativeImage.createFromBitmap(drawProgressRing(step / RING_STEPS), {
+      width: RING_SIZE_PX,
+      height: RING_SIZE_PX,
+      scaleFactor: 2,
+    });
+    image.setTemplateImage(true);
+    ringImages.set(step, image);
+  }
+  return image;
+}
+
+function updateTrayIcon(): void {
+  const step = getProgressRingStep();
+  if (step === shownRingStep) return;
+  shownRingStep = step;
+  tray.setImage(step === null ? defaultIconPath : getRingImage(step));
+}
 
 const rootPath = path.dirname(app.getPath("exe"));
 const resourcesPath =
@@ -119,6 +171,7 @@ export function buildTray(): void {
           : path.join(app.getAppPath(), "..", "tray", "icon.png");
     }
 
+    defaultIconPath = imgPath;
     tray = new Tray(imgPath);
 
     // On windows, context menu will not show on left click by default
@@ -135,6 +188,7 @@ export function buildTray(): void {
   if (process.platform === "darwin") {
     const trayTitle = getTrayTitle();
     tray.setTitle(trayTitle ?? "", { fontType: "monospacedDigit" });
+    updateTrayIcon();
   }
 
   const setBreaksEnabled = (breaksEnabled: boolean): void => {
@@ -177,8 +231,8 @@ export function buildTray(): void {
       title: "关于",
       type: "info",
       buttons: ["好"],
-      message: `BreakTimer`,
-      detail: `版本：${packageJson.version}（中文版）\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/breaktimer-app\n\n依据 GPL-3.0-or-later 许可证发布。`,
+      message: `番茄钟`,
+      detail: `版本：${packageJson.version}\n基于开源软件 BreakTimer 改写的中文版\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/breaktimer-app\n\n依据 GPL-3.0-or-later 许可证发布。`,
     });
   };
 
@@ -303,6 +357,8 @@ export function initTray(): void {
         buildTray();
         lastTrayTitle = currentTrayTitle;
       }
+      // Redraws only when the ring visibly changes.
+      updateTrayIcon();
     }
 
     const breakTime = getBreakTime();

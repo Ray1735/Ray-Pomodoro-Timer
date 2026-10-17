@@ -13,7 +13,7 @@ export default function StartupCard({
   return (
     <SettingsCard
       title="登录时自动启动"
-      helperText="登录电脑时自动启动 BreakTimer。"
+      helperText="登录电脑时自动启动番茄钟。"
       toggle={{
         checked: settingsDraft.autoLaunch,
         onCheckedChange: (checked) => onSwitchChange("autoLaunch", checked),

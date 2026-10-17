@@ -1,86 +1,44 @@
-# BreakTimer App - https://breaktimer.app
+# 番茄钟
 
-![](https://img.shields.io/github/downloads/tom-james-watson/breaktimer-app/total?logo=github&style=social)
+一个到点就**强制休息**的 Mac 小工具：工作一段时间后，整个屏幕被休息画面盖住，倒计时结束才放你回去。
 
-🔨 **Looking for contributors** 🔨 If you feel like getting involved, please get in contact!
+本项目是开源软件 [BreakTimer](https://github.com/tom-james-watson/breaktimer-app)（作者 Tom Watson）的中文改写版，只提供 Apple 芯片（M 系列）Mac 的安装包。
 
-BreakTimer is a desktop application for managing and enforcing periodic breaks. BreakTimer is available for Windows, macOS, and Linux.
+## 功能
 
-BreakTimer allows you to customize:
+- **番茄钟**：自定义每次工作多久（番茄钟时长）、休息多久（休息时长）。
+- **全屏休息**：休息时整个屏幕被盖住，包括菜单栏和程序坞。
+- **推迟**：手头的事还差几分钟时，可以点"推迟 X 分钟"。休息开始前的提醒条和全屏休息画面上都有这个按钮，推迟时长和最多连续推迟几次都能在设置里改。
+- **菜单栏进度圈**：计时中，菜单栏图标是一个慢慢减少的圆圈，一眼看出大概还剩多少。
+- **工作时间**：只在你设定的时间段里提醒，比如工作日 9 点到 18 点。
+- **智能识别休息**：离开电脑够久，自动算作休息过了。
+- **完全离线**：没有任何联网功能，并在程序层面封住了所有联网接口（见下文）。
 
-- How long your breaks are and how often do you wish to have them
-- Whether to be reminded with a simple notification or a fullscreen break window
-- Working hours so you are only reminded when you want to be
-- The content of messages shown during breaks.
-- Whether to intelligently restart your break countdown when it detects that you have not been using the computer
+## 下载和安装
 
-We do not offer support for enterprise environments or commercial deployment. This software is provided ‘as is’ without any warranties or guarantees of support.
+1. 到 [Releases 发布页](../../releases/latest) 下载 `BreakTimer-zh-CN-arm64.dmg`。
+2. 打开 dmg，把"番茄钟"拖进"应用程序"文件夹。
+3. 第一次打开会被系统拦下（没有苹果开发者签名）：到"系统设置 → 隐私与安全性"，在页面下方点"仍要打开"，只需一次。
 
-## Installation
+## 怎么确认安装包可信
 
-- **Windows** - [BreakTimer.exe](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.exe) (Unsigned - you will receive a warning on install, press more info -> run anyway. Will not auto-update)
-- **macOS** - [BreakTimer.dmg](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.dmg)
-- **Linux**:
-  - Auto-updating **[preferred]**:
-    - [BreakTimer Snap](https://snapcraft.io/breaktimer) - **also available in the Ubuntu App Store**.
-    - [BreakTimer.AppImage](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.AppImage)
-  - Non auto-updating
-    - [BreakTimer.deb](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.deb)
-    - [BreakTimer.rpm](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.rpm) (untested)
-    - [BreakTimer.tar.gz](https://github.com/tom-james-watson/breaktimer-app/releases/latest/download/BreakTimer.tar.gz)
+- **对照校验值**：每个发布页都写着安装包的 SHA-256 校验值。下载后在"终端"运行 `shasum -a 256 ~/Downloads/BreakTimer-zh-CN-arm64.dmg`，结果应完全一致。
+- **构建来源证明**：安装包由 GitHub 官方云端 Mac 从本仓库源码自动编译，并附带 GitHub 签发的来源证明。装了 GitHub 命令行工具的话，可以运行 `gh attestation verify ~/Downloads/BreakTimer-zh-CN-arm64.dmg -R Ray1735/breaktimer-app` 验证。
+- **不可变发布**：发布后，安装包不能被原地替换，版本号也不能移动。
 
-## FAQ
+## 离线是怎么做到的
 
-### Can I donate to BreakTimer?
+- 不含任何联网功能（原版的自动更新已删除）。
+- 浏览器引擎层：所有域名都解析不到地址；所有流量被强制导向一个不存在的代理；网页请求一律拦截。
+- 主进程层：TCP、UDP、DNS 查询和 fetch 全部禁用（只保留本机内部的进程间通信），并有单元测试逐项验证。
+- 每次编译时，安装包会在云端 Mac 上完整运行约 3 分钟，全程抓取所有网络数据包并标注来自哪个进程。只要出现一个来自番茄钟的数据包，或出现任何被拦下的联网尝试，就不准发布。
 
-Some of you have asked about being able to make a donation towards BreakTimer. That's incredibly generous, but I honestly have no need for monetary donations.
+以上是软件自身的保证和每次构建时的实测，不是 macOS 系统强制的限制；要系统层面强制，需要另装防火墙软件。
 
-If you’d like to show your appreciation, consider donating to a charity of your choice instead. That way, the money goes where it’s really needed 🫶. If you do, I’d love to hear about it—feel free to email me at contact@breaktimer.app and let me know where you donated.
+## 和原版的区别
 
-### Why can't I see the app in the tray?
+完整改动见 [`zh-cn` 分支的提交记录](../../commits/zh-cn)。所用组件与原版一致，依赖清单未改动。
 
-Some operating systems, such as Linux distributions running plain Gnome (e.g. Fedora) or Pantheon (e.g. Elementary OS), don't support system tray icons. In this case, simply re-run the app to open the settings window. You will lose access to certain functionality only available in the tray menu, but at least this workaround lets you use the app.
+## 许可证
 
-### Is there a way to control the app via the command line?
-
-On Linux, if you run the app via the command line there is some basic support for command line arguments:
-
-Disable breaks:
-
-```bash
-breaktimer disable
-```
-
-Enable breaks:
-
-```bash
-breaktimer enable
-```
-
-### How can I pass you my log files to help you debug an issue?
-
-You can find the log file for BreakTimer here:
-
-Linux: `/home/<USERNAME>/.config/BreakTimer/logs/main.log`
-
-macOS: `/Users/<USERNAME>/Library/Logs/BreakTimer/main.log`
-
-Windows: `C:\Users\<USERNAME>\AppData\Roaming\BreakTimer\logs/main.log`
-
-You can either upload this to a cloud service such as Dropbox or Google Drive and enable public sharing, or you can email the file as an attachment to contact@breaktimer.app. The log files do not contain any personally identifying information.
-
-Please try and include a timestamp for roughly when you have seen the issue so that I can find the relevant place in the log file.
-
-### How can I hard reset the app's data
-
-In case a bug has left the UI in an unrecoverable state, you can reset the app data by exiting the app, deleting the below folder, and starting the app again.
-
-Linux: `/home/<USERNAME>/.config/BreakTimer`
-
-macOS: `/Users/<USERNAME>/Library/Application Support/BreakTimer`
-
-Windows: `C:\Users\<USERNAME>\AppData\Roaming\BreakTimer`
-
-## Development
-
-See [./DEVELOPMENT.md](DEVELOPMENT.md).
+与原版相同，依据 [GPL-3.0-or-later](LICENSE.md) 发布。原版英文说明见 [原项目主页](https://github.com/tom-james-watson/breaktimer-app#readme)。

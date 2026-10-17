@@ -1,8 +1,8 @@
 {
   "name": "breaktimer",
   "version": "2.1.0",
-  "productName": "BreakTimer",
-  "description": "Manage periodic breaks",
+  "productName": "番茄钟",
+  "description": "番茄钟：到点强制休息（BreakTimer 中文版）",
   "scripts": {
     "build": "concurrently \"npm run build-main\" \"npm run build-renderer\"",
     "build-main": "webpack --config webpack.main.config.js",
@@ -31,7 +31,7 @@
   "license": "GPL-3.0-or-later",
   "main": "./app/main/dist/main.prod.js",
   "build": {
-    "productName": "BreakTimer",
+    "productName": "番茄钟",
     "copyright": "Copyright © 2019 Thomas James Watson",
     "appId": "com.tomjwatson.breaktimer",
     "files": [

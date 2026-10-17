@@ -28,6 +28,9 @@ type SystemIdleMonitor = Pick<PowerMonitor, "getSystemIdleState">;
 
 let powerMonitor: SystemIdleMonitor;
 let breakTime: BreakTime = null;
+// Chinese fork: when the current countdown started, so the menu bar progress
+// ring knows the full length (a focus period, or a shorter snooze).
+let breakScheduledAt: moment.Moment | null = null;
 let havingBreak = false;
 let postponedCount = 0;
 let idleStart: Date | null = null;
@@ -40,6 +43,10 @@ let currentBreakStartTime: Date | null = null;
 
 export function getBreakTime(): BreakTime {
   return breakTime;
+}
+
+export function getBreakScheduledAt(): moment.Moment | null {
+  return breakScheduledAt;
 }
 
 export function getBreakLengthSeconds(): number {
@@ -163,7 +170,8 @@ export function scheduleNextBreak(isPostpone = false): void {
     ? settings.postponeLengthSeconds
     : settings.breakFrequencySeconds;
 
-  breakTime = moment().add(seconds, "seconds");
+  breakScheduledAt = moment();
+  breakTime = moment(breakScheduledAt).add(seconds, "seconds");
 
   log.info(
     `Scheduling next break [isPostpone=${isPostpone}] [seconds=${seconds}] [postponeLength=${settings.postponeLengthSeconds}] [frequency=${settings.breakFrequencySeconds}] [scheduledFor=${breakTime.format("HH:mm:ss")}]`,
@@ -203,6 +211,9 @@ export function getAllowPostpone(): boolean {
 export function postponeBreak(action = "snoozed"): void {
   postponedCount++;
   havingBreak = false;
+  // Chinese fork: snoozing can now also happen in the middle of a break. A
+  // postponed or skipped break must not count as a completed one.
+  currentBreakStartTime = null;
   log.info(`Break ${action} [count=${postponedCount}]`);
 
   if (action === "skipped") {

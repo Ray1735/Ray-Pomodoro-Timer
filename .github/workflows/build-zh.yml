@@ -1,9 +1,9 @@
-# 构建 BreakTimer 中文版（Apple 芯片 Mac）
+# 构建番茄钟（BreakTimer 中文版，Apple 芯片 Mac）
 #
 # 推送到 zh-cn 分支时：
 #   1. check    —— 类型检查、单元测试、代码规范、格式检查
 #   2. build-mac —— 在 GitHub 官方云端 Mac 上从这次提交的源码打包 dmg，
-#                  校验签名、实际启动并截图预览。此任务只有只读权限。
+#                  校验签名、实际运行并全程抓包、截图预览。此任务只有只读权限。
 #   3. release  —— 计算校验值（SHA-256）、生成构建来源证明、发布到 Releases。
 #                  此任务有写权限，但不安装依赖、不运行项目里的任何代码。
 #
@@ -66,6 +66,9 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.collect.outputs.version }}
+    env:
+      APP: release/mac-arm64/番茄钟.app
+      BIN: release/mac-arm64/番茄钟.app/Contents/MacOS/番茄钟
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,7 +96,6 @@ jobs:
 
       - name: 检查签名完整
         run: |
-          APP="release/mac-arm64/BreakTimer.app"
           codesign --verify --deep --strict --verbose=2 "$APP"
           INFO="$(codesign -dv "$APP" 2>&1)"
           echo "$INFO" | grep -E "^(Identifier|Signature|Format)"
@@ -101,10 +103,9 @@ jobs:
 
       # 用测试配置启动：20 秒后到点提醒；关掉"智能识别休息"（云端机器
       # 没人操作，会被当成一直在休息）；标记为已初始化，跳过欢迎弹窗。
-      - name: 启动测试，并截取设置页、提醒条、全屏休息三张预览图
+      # 改名后设置仍在原来的 BreakTimer 目录里。
+      - name: 运行测试：全程抓包验证离线，并截取三张预览图
         run: |
-          APP="release/mac-arm64/BreakTimer.app"
-          BIN="$APP/Contents/MacOS/BreakTimer"
           CFG_DIR="$HOME/Library/Application Support/BreakTimer"
           mkdir -p "$CFG_DIR"
           cat > "$CFG_DIR/config.json" <<'EOF'
@@ -120,10 +121,18 @@ jobs:
           }
           EOF
 
+          # 把关键结果写成 GitHub 注释（annotation），方便在网页和接口里直接查看
+          annotate() {
+            local msg
+            msg="$(head -c 4000 | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk 'BEGIN{ORS="%0A"} {print}')"
+            echo "::$1 title=$2::$msg"
+          }
+
           alive() {
             if ! kill -0 "$PID" 2>/dev/null; then
               echo "应用崩溃了："
               cat smoke.log
+              tail -40 smoke.log | annotate error "应用崩溃"
               exit 1
             fi
           }
@@ -131,36 +140,45 @@ jobs:
             screencapture -x "$1" || echo "截图失败：$1（不影响安装包）"
           }
 
-          # 联网监测：整个测试期间，每秒检查一次 BreakTimer 所有进程
-          # （含各个辅助进程）有没有任何网络连接，记到 net.log
+          # ① 全程抓包：抓取本机所有网卡（含本机回环）的每一个数据包，
+          #    并标注它来自哪个进程（macOS 的 pktap 功能）
+          sudo tcpdump -i pktap,all -kNP -n -l > pktap.txt 2> pktap.err &
+          sleep 3
+
+          # 阳性对照：用 curl 真实联网一次，抓包结果里必须能认出这个 curl
+          # 进程。认不出，说明抓包方法不可靠，直接判失败。
+          curl -s -o /dev/null https://github.com &
+          CURL=$!
+          wait "$CURL" || true
+          sleep 2
+          if ! grep -Eq "proc [^,)]*:${CURL}[,): ]" pktap.txt; then
+            echo "抓包自检失败：没能把 curl 的联网流量对应到它的进程"
+            head -30 pktap.txt
+            cat pktap.err
+            { echo "curl pid=${CURL}"; head -30 pktap.txt; echo "---"; cat pktap.err; } | annotate error "抓包自检失败"
+            exit 1
+          fi
+          echo "抓包自检通过：能识别出某个进程的联网流量"
+          { echo "curl 进程号 ${CURL}，抓到它的数据包 $(grep -Ec "proc [^,)]*:${CURL}[,): ]" pktap.txt) 个，样例："; grep -E "proc [^,)]*:${CURL}[,): ]" pktap.txt | head -3; } | annotate notice "抓包自检通过"
+
+          # ② 每秒记录番茄钟的所有进程号（含各个辅助进程），
+          #    同时用 lsof 查看它们有没有打开网络连接
+          : > pids.log
           : > net.log
-          watch_net() {
+          watch_app() {
             while true; do
-              PIDS="$(pgrep -f "BreakTimer.app/Contents" | paste -sd, - || true)"
+              PIDS="$(pgrep -f "番茄钟.app/Contents" | paste -sd, - || true)"
               if [ -n "$PIDS" ]; then
+                echo "$PIDS" | tr ',' '\n' >> pids.log
                 lsof -nP -a -i -p "$PIDS" 2>/dev/null | tail -n +2 >> net.log || true
               fi
               sleep 1
             done
           }
-
-          # 先确认监测手段本身有效：一个监听端口的测试进程必须能被查到
-          nc -l 54321 > /dev/null 2>&1 &
-          NC=$!
-          sleep 1
-          NC_SOCKETS="$(lsof -nP -a -i -p "$NC" 2>/dev/null || true)"
-          kill "$NC" 2>/dev/null || true
-          case "$NC_SOCKETS" in
-            *54321*) echo "联网监测自检通过" ;;
-            *)
-              echo "联网监测自检失败：查不到测试进程的网络连接"
-              exit 1
-              ;;
-          esac
-
-          watch_net &
+          watch_app &
           WATCH=$!
 
+          # ③ 运行应用，走完设置页 → 到点提醒 → 全屏休息
           "$BIN" > smoke.log 2>&1 &
           PID=$!
           sleep 8
@@ -186,29 +204,61 @@ jobs:
           echo "应用全程运行正常"
           kill "$PID" || true
           kill "$WATCH" || true
+          sleep 2
+          sudo pkill -INT -x tcpdump || true
+          sleep 2
 
-          # 离线验证：不允许有任何网络连接，也不允许有被拦下的联网尝试
+          # ④ 判定：以下任何一项不满足，都不准发布
+          echo "$PID" >> pids.log
+          sort -u pids.log | grep -E '^[0-9]+$' > pids.txt || true
+          echo "抓到数据包 $(wc -l < pktap.txt) 个，番茄钟进程 $(wc -l < pids.txt) 个"
+
           if [ -s net.log ]; then
-            echo "检测到网络连接（不允许）："
+            echo "lsof 发现网络连接（不允许）："
             sort -u net.log
+            sort -u net.log | annotate error "lsof 发现网络连接"
             exit 1
           fi
-          BLOCKED="$(cat smoke.log "$HOME/Library/Logs/BreakTimer/main.log" 2>/dev/null | grep "Blocked network request" || true)"
+
+          HITS=""
+          while read -r p; do
+            M="$(grep -E "proc [^,)]*:${p}[,): ]" pktap.txt || true)"
+            if [ -n "$M" ]; then HITS="${HITS}${M}"$'\n'; fi
+          done < pids.txt
+          NAME_HITS="$(grep -F "番茄钟" pktap.txt || true)"
+          if [ -n "${HITS}${NAME_HITS}" ]; then
+            echo "抓包发现来自番茄钟进程的数据包（不允许）："
+            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | head -50
+            printf '%s\n%s\n' "$HITS" "$NAME_HITS" | sort -u | head -30 | annotate error "抓包发现番茄钟的数据包"
+            exit 1
+          fi
+
+          BLOCKED="$(cat smoke.log "$HOME/Library/Logs/番茄钟/main.log" "$HOME/Library/Logs/BreakTimer/main.log" 2>/dev/null | grep "Blocked network request" || true)"
           if [ -n "$BLOCKED" ]; then
             echo "应用尝试过联网（已被拦下，但不允许出现）："
             echo "$BLOCKED"
+            echo "$BLOCKED" | annotate error "应用尝试过联网"
             exit 1
           fi
-          echo "离线验证通过：测试全程，BreakTimer 所有进程都没有任何网络连接，也没有联网尝试"
+
+          echo "离线验证通过：本次约 3 分钟的运行中，抓到的数据包没有一个来自番茄钟的进程，也没有出现被拦下的联网尝试"
+          {
+            echo "抓到数据包 $(wc -l < pktap.txt) 个（含云端机器自身流量），番茄钟进程 $(wc -l < pids.txt) 个：$(paste -sd' ' pids.txt)"
+            echo "来自这些进程的数据包：0 个；lsof 网络连接：0 个；被拦下的联网尝试：0 次"
+          } | annotate notice "离线验证通过"
 
       - name: 整理产物
         id: collect
         run: |
           mkdir -p out
-          cp release/BreakTimer.dmg out/BreakTimer-zh-CN-arm64.dmg
-          for f in preview-*.png; do
-            if [ -f "$f" ]; then cp "$f" out/; fi
-          done
+          shopt -s nullglob
+          DMGS=(release/*.dmg)
+          if [ "${#DMGS[@]}" -ne 1 ]; then
+            echo "应当正好有一个 dmg，实际：${DMGS[*]}"
+            exit 1
+          fi
+          cp "${DMGS[0]}" out/BreakTimer-zh-CN-arm64.dmg
+          for f in preview-*.png; do cp "$f" out/; done
           echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
           ls -la out
 
@@ -258,7 +308,8 @@ jobs:
           RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           cat > notes.md <<EOF
-          BreakTimer 中文版，基于原作者 v${VERSION}，只适用于 Apple 芯片（M 系列）的 Mac。
+          番茄钟（BreakTimer 中文版），基于原作者 v${VERSION}，只适用于 Apple 芯片（M 系列）的 Mac。
+          安装包里是"番茄钟.app"。
 
           **校验值（SHA-256）**
 
@@ -279,9 +330,10 @@ jobs:
           **构建来源**：由 GitHub 官方云端 Mac 从提交 \`${GITHUB_SHA}\` 自动编译，
           完整记录见 ${RUN_URL}
 
-          **离线**：应用不含任何联网功能，并在程序层面拦截所有联网请求和域名解析。
-          这次安装包在云端 Mac 上完整运行了约 3 分钟（设置页 → 到点提醒 → 全屏休息），
-          期间每秒检查一次它的所有进程，没有任何网络连接，也没有联网尝试。
+          **离线**：软件不含联网功能，并在程序层面封住了浏览器引擎和主进程的所有联网接口。
+          本次安装包在云端 Mac 上完整运行了约 3 分钟（设置页 → 到点提醒 → 全屏休息），
+          期间抓取了所有网络数据包并标注来源进程：没有一个来自番茄钟的进程，也没有被拦下的联网尝试。
+          抓包方法事先用一次真实联网验证过能识别出进程。这是本次运行期间的实测结果。
 
           **预览图**：下方 preview-*.png 是这次安装包在云端 Mac 上实际运行时的截图。
 
@@ -297,5 +349,5 @@ jobs:
           gh release create "$TAG" "${ASSETS[@]}" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "BreakTimer 中文版 v${VERSION}（第 ${GITHUB_RUN_NUMBER} 次构建）" \
+            --title "番茄钟 v${VERSION}（BreakTimer 中文版，第 ${GITHUB_RUN_NUMBER} 次构建）" \
             --notes-file notes.md

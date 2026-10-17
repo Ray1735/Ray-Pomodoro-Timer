@@ -19,6 +19,7 @@ import SnoozeCard from "./settings/snooze-card";
 import StartupCard from "./settings/startup-card";
 import ThemeCard from "./settings/theme-card";
 import TrayCard from "./settings/tray-card";
+import TrayProgressCard from "./settings/tray-progress-card";
 import WorkingHoursSettings from "./settings/working-hours";
 import WelcomeModal from "./welcome-modal";
 
@@ -102,7 +103,7 @@ export default function SettingsEl() {
       ...settingsDraft,
       textColor: "#ffffff",
       backgroundColor: "#16a085",
-      backdropOpacity: 0.7,
+      backdropOpacity: 1,
     });
   };
 
@@ -230,6 +231,12 @@ export default function SettingsEl() {
                 settingsDraft={settingsDraft}
                 onSwitchChange={handleSwitchChange}
               />
+              {processPlatform === "darwin" && (
+                <TrayProgressCard
+                  settingsDraft={settingsDraft}
+                  onSwitchChange={handleSwitchChange}
+                />
+              )}
               {processPlatform === "darwin" && (
                 <TrayCard
                   settingsDraft={settingsDraft}

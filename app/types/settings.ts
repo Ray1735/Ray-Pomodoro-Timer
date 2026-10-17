@@ -32,6 +32,8 @@ export interface Settings {
   breaksEnabled: boolean;
   trayTextEnabled: boolean;
   trayTextMode: TrayTextMode;
+  // Chinese fork: draw a shrinking progress ring as the menu bar icon.
+  trayProgressEnabled: boolean;
   notificationType: NotificationType;
   breakFrequencySeconds: number;
   breakLengthSeconds: number;
@@ -70,8 +72,9 @@ export const defaultWorkingRange: WorkingHoursRange = {
 export const defaultSettings: Settings = {
   autoLaunch: true,
   breaksEnabled: true,
-  trayTextEnabled: true,
+  trayTextEnabled: false,
   trayTextMode: TrayTextMode.TimeToNextBreak,
+  trayProgressEnabled: true,
   notificationType: NotificationType.Popup,
   breakFrequencySeconds: 28 * 60,
   breakLengthSeconds: 2 * 60,
@@ -116,7 +119,7 @@ export const defaultSettings: Settings = {
   backgroundColor: "#16a085",
   textColor: "#ffffff",
   showBackdrop: true,
-  backdropOpacity: 0.7,
+  backdropOpacity: 1,
   endBreakEnabled: true,
   skipBreakEnabled: false,
   postponeBreakEnabled: true,

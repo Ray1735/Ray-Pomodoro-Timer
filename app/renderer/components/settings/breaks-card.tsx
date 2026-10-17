@@ -59,7 +59,7 @@ export default function BreaksCard({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium">间隔</Label>
+            <Label className="text-sm font-medium">番茄钟时长</Label>
             <TimeInput
               precision="seconds"
               value={settingsDraft.breakFrequencySeconds}
@@ -74,7 +74,7 @@ export default function BreaksCard({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium">时长</Label>
+            <Label className="text-sm font-medium">休息时长</Label>
             <TimeInput
               precision="seconds"
               value={settingsDraft.breakLengthSeconds}

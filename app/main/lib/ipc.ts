@@ -107,6 +107,12 @@ ipcMain.handle(
         // Fullscreen for backdrop mode
         window.setSize(display.bounds.width, display.bounds.height);
         window.setPosition(display.bounds.x, display.bounds.y);
+        // Chinese fork: sit above everything, including the menu bar and
+        // Dock, and accept keyboard focus so the break really blocks the
+        // screen. Focus returns to the previous app when the break closes.
+        window.setAlwaysOnTop(true, "screen-saver");
+        window.setFocusable(true);
+        window.focus();
       } else {
         // Centered window for no backdrop mode
         const windowWidth = 500;

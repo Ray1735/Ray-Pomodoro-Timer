@@ -23,7 +23,7 @@ export default function TrayCard({
   return (
     <SettingsCard
       title="菜单栏文字"
-      helperText="在菜单栏图标旁边显示时间。"
+      helperText="在菜单栏图标旁边显示具体分钟数。"
       toggle={{
         checked: settingsDraft.trayTextEnabled,
         onCheckedChange: (checked) =>

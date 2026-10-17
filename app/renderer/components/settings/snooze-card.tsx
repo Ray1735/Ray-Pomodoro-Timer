@@ -26,14 +26,11 @@ export default function SnoozeCard({
   return (
     <SettingsCard
       title="推迟"
-      helperText="忙的时候，可以把这次休息往后推一推。"
+      helperText="忙的时候可以把休息往后推。休息前的提醒条和全屏休息画面上都有“推迟”按钮。"
       toggle={{
-        checked:
-          settingsDraft.postponeBreakEnabled &&
-          !settingsDraft.immediatelyStartBreaks,
+        checked: settingsDraft.postponeBreakEnabled,
         onCheckedChange: (checked) =>
           onSwitchChange("postponeBreakEnabled", checked),
-        disabled: settingsDraft.immediatelyStartBreaks,
       }}
     >
       <div className="grid grid-cols-2 gap-4">
@@ -49,10 +46,7 @@ export default function SnoozeCard({
               date.setSeconds(seconds % 60);
               onDateChange("postponeLength", date);
             }}
-            disabled={
-              !settingsDraft.postponeBreakEnabled ||
-              settingsDraft.immediatelyStartBreaks
-            }
+            disabled={!settingsDraft.postponeBreakEnabled}
           />
         </div>
         <div className="space-y-2">
@@ -60,10 +54,7 @@ export default function SnoozeCard({
           <Select
             value={settingsDraft.postponeLimit.toString()}
             onValueChange={onPostponeLimitChange}
-            disabled={
-              !settingsDraft.postponeBreakEnabled ||
-              settingsDraft.immediatelyStartBreaks
-            }
+            disabled={!settingsDraft.postponeBreakEnabled}
           >
             <SelectTrigger>
               <SelectValue />

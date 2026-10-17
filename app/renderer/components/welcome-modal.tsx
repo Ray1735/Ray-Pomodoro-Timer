@@ -27,7 +27,7 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
         showCloseButton={false}
       >
         <DialogHeader className="text-left">
-          <DialogTitle>BreakTimer 在后台运行</DialogTitle>
+          <DialogTitle>番茄钟在后台运行</DialogTitle>
           <DialogDescription className="text-base leading-relaxed text-balance pt-2">
             点击屏幕顶部菜单栏里的图标，就能打开它。
           </DialogDescription>

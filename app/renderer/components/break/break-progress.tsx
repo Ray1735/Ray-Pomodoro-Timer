@@ -3,13 +3,17 @@ import { motion } from "framer-motion";
 import moment from "moment";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Settings, SoundType } from "../../../types/settings";
-import { TimeRemaining } from "./utils";
+import { formatSnoozeLabel, TimeRemaining } from "./utils";
 
 interface BreakProgressProps {
   breakMessage: string;
   breakTitle: string;
   endBreakEnabled: boolean;
   onEndBreak: () => void;
+  // Chinese fork: snooze button on the full-screen break.
+  postponeBreakEnabled: boolean;
+  postponeLengthSeconds: number;
+  onPostponeBreak: () => void;
   settings: Settings;
   textColor: string;
   isClosing?: boolean;
@@ -21,6 +25,9 @@ export function BreakProgress({
   breakTitle,
   endBreakEnabled,
   onEndBreak,
+  postponeBreakEnabled,
+  postponeLengthSeconds,
+  onPostponeBreak,
   settings,
   textColor,
   isClosing = false,
@@ -139,19 +146,34 @@ export function BreakProgress({
         >
           {breakTitle}
         </h1>
-        {endBreakEnabled && (
-          <Button
-            className="!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20"
-            onClick={onEndBreak}
-            variant="outline"
-            style={{
-              color: textColor,
-              borderColor: "rgba(255, 255, 255, 0.2)",
-            }}
-          >
-            {progress < 0.5 ? "取消休息" : "结束休息"}
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {postponeBreakEnabled && (
+            <Button
+              className="!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20"
+              onClick={onPostponeBreak}
+              variant="outline"
+              style={{
+                color: textColor,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              {formatSnoozeLabel(postponeLengthSeconds)}
+            </Button>
+          )}
+          {endBreakEnabled && (
+            <Button
+              className="!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20"
+              onClick={onEndBreak}
+              variant="outline"
+              style={{
+                color: textColor,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              {progress < 0.5 ? "取消休息" : "结束休息"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Break message */}

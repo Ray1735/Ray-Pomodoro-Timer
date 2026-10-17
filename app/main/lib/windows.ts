@@ -51,7 +51,7 @@ export function createSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    title: "BreakTimer — 设置",
+    title: "番茄钟 — 设置",
     show: false,
     width: 580,
     minWidth: 580,
