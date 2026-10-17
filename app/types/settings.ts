@@ -39,6 +39,9 @@ export interface Settings {
   breakLengthSeconds: number;
   postponeLengthSeconds: number;
   postponeLimit: number;
+  // Chinese fork: the three longer snooze choices behind "推迟更久" on the
+  // full-screen break, in seconds.
+  extraPostponeSeconds: number[];
   workingHoursEnabled: boolean;
   workingHoursMonday: WorkingHours;
   workingHoursTuesday: WorkingHours;
@@ -80,6 +83,7 @@ export const defaultSettings: Settings = {
   breakLengthSeconds: 2 * 60,
   postponeLengthSeconds: 3 * 60,
   postponeLimit: 0,
+  extraPostponeSeconds: [5 * 60, 10 * 60, 15 * 60],
   workingHoursEnabled: true,
   workingHoursMonday: {
     enabled: true,

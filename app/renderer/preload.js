@@ -14,8 +14,8 @@ process.once("loaded", () => {
   contextBridge.exposeInMainWorld("processEnv", { SNAP: process.env.SNAP });
   contextBridge.exposeInMainWorld("processPlatform", process.platform);
   contextBridge.exposeInMainWorld("ipcRenderer", {
-    invokeBreakPostpone: (action) => {
-      return ipcRenderer.invoke("BREAK_POSTPONE", action);
+    invokeBreakPostpone: (action, seconds) => {
+      return ipcRenderer.invoke("BREAK_POSTPONE", action, seconds);
     },
     invokeGetAllowPostpone: () => {
       return ipcRenderer.invoke("ALLOW_POSTPONE_GET");

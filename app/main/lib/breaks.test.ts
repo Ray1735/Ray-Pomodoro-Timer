@@ -95,3 +95,67 @@ describe("system suspension", () => {
     expect(breaks.getTimeSinceLastCompletedBreak()).toBe(0);
   });
 });
+
+// Chinese fork: snoozing with a chosen length ("推迟更久").
+describe("snooze length", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-24T09:00:00Z"));
+    vi.resetModules();
+    vi.clearAllMocks();
+    harness.settings = {
+      ...defaultSettings,
+      notificationType: NotificationType.Popup,
+      postponeLengthSeconds: 180,
+    };
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("uses the normal snooze length when none is given", async () => {
+    const breaks = await import("./breaks.js");
+    breaks.postponeBreak("snoozed");
+    expect(breaks.getBreakTime()?.diff(moment(), "seconds")).toBe(180);
+  });
+
+  it("uses the chosen length for a longer snooze", async () => {
+    const breaks = await import("./breaks.js");
+    breaks.postponeBreak("snoozed", 600);
+    expect(breaks.getBreakTime()?.diff(moment(), "seconds")).toBe(600);
+    expect(breaks.getBreakScheduledAt()?.diff(moment(), "seconds")).toBe(0);
+  });
+
+  it("falls back to the normal length for invalid values", async () => {
+    for (const bad of [0, -60, Number.NaN, Infinity, 2 * 86400, "600", {}]) {
+      vi.resetModules();
+      const breaks = await import("./breaks.js");
+      breaks.postponeBreak("snoozed", bad);
+      expect(breaks.getBreakTime()?.diff(moment(), "seconds")).toBe(180);
+    }
+  });
+
+  it("ends a running break without counting it as completed", async () => {
+    const breaks = await import("./breaks.js");
+    breaks.startBreakNow();
+    breaks.startBreakTracking();
+    const before = breaks.getTimeSinceLastCompletedBreak();
+
+    vi.advanceTimersByTime(90_000);
+    breaks.postponeBreak("snoozed", 900);
+    breaks.endPopupBreak();
+
+    expect(breaks.isHavingBreak()).toBe(false);
+    expect(breaks.getBreakTime()?.diff(moment(), "seconds")).toBe(900);
+    // Still counting from before the break: the snoozed break didn't count.
+    expect(breaks.getTimeSinceLastCompletedBreak()).toBe((before ?? 0) + 90);
+  });
+
+  it("ignores the length for a skip", async () => {
+    harness.settings = { ...harness.settings, breakFrequencySeconds: 1500 };
+    const breaks = await import("./breaks.js");
+    breaks.postponeBreak("skipped", 600);
+    expect(breaks.getBreakTime()?.diff(moment(), "seconds")).toBe(1500);
+  });
+});

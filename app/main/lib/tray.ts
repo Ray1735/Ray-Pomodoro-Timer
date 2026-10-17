@@ -232,7 +232,7 @@ export function buildTray(): void {
       type: "info",
       buttons: ["好"],
       message: `番茄钟`,
-      detail: `版本：${packageJson.version}\n基于开源软件 BreakTimer 改写的中文版\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/breaktimer-app\n\n依据 GPL-3.0-or-later 许可证发布。`,
+      detail: `版本：${packageJson.version}\n基于开源软件 BreakTimer 改写的中文版\n\n原作者：Tom Watson\nhttps://breaktimer.app\n\n原版源代码：\nhttps://github.com/tom-james-watson/breaktimer-app\n\n中文版源代码：\nhttps://github.com/Ray1735/Ray-Pomodoro-Timer\n\n依据 GPL-3.0-or-later 许可证发布。`,
     });
   };
 

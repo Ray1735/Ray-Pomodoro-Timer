@@ -97,6 +97,12 @@ export default function Break() {
     setClosing(true);
   }, []);
 
+  // Chinese fork: snooze for a chosen length ("推迟更久" choices).
+  const handlePostponeBreakFor = useCallback(async (seconds: number) => {
+    await ipcRenderer.invokeBreakPostpone("snoozed", seconds);
+    setClosing(true);
+  }, []);
+
   const handleSkipBreak = useCallback(async () => {
     await ipcRenderer.invokeBreakPostpone("skipped");
     setClosing(true);
@@ -195,6 +201,8 @@ export default function Break() {
             }
             postponeLengthSeconds={settings.postponeLengthSeconds}
             onPostponeBreak={handlePostponeBreak}
+            extraPostponeSeconds={settings.extraPostponeSeconds}
+            onPostponeBreakFor={handlePostponeBreakFor}
             settings={settings}
             textColor={settings.textColor}
             isClosing={closing}

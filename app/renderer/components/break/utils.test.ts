@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatSnoozeLabel, formatTimeSinceLastBreak } from "./utils";
+import {
+  formatDuration,
+  formatSnoozeLabel,
+  formatTimeSinceLastBreak,
+} from "./utils";
 
 describe("formatSnoozeLabel", () => {
   it("shows whole minutes", () => {
@@ -30,5 +34,15 @@ describe("formatTimeSinceLastBreak", () => {
     expect(formatTimeSinceLastBreak(3600 + 5 * 60)).toBe(
       "距上次休息已过 1 小时 5 分钟",
     );
+  });
+});
+
+describe("formatDuration", () => {
+  it("formats the longer snooze choices", () => {
+    expect(formatDuration(5 * 60)).toBe("5 分钟");
+    expect(formatDuration(10 * 60)).toBe("10 分钟");
+    expect(formatDuration(15 * 60)).toBe("15 分钟");
+    expect(formatDuration(90 * 60)).toBe("1 小时 30 分钟");
+    expect(formatDuration(0)).toBe("");
   });
 });

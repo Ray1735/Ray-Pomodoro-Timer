@@ -1,19 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import moment from "moment";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Settings, SoundType } from "../../../types/settings";
 import { formatSnoozeLabel, TimeRemaining } from "./utils";
+
+const BREAK_BUTTON_CLASS =
+  "!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20";
+const BREAK_BUTTON_BORDER = "rgba(255, 255, 255, 0.2)";
 
 interface BreakProgressProps {
   breakMessage: string;
   breakTitle: string;
   endBreakEnabled: boolean;
   onEndBreak: () => void;
-  // Chinese fork: snooze button on the full-screen break.
+  // Chinese fork: snooze buttons on the full-screen break.
   postponeBreakEnabled: boolean;
   postponeLengthSeconds: number;
   onPostponeBreak: () => void;
+  extraPostponeSeconds: number[];
+  onPostponeBreakFor: (seconds: number) => void;
   settings: Settings;
   textColor: string;
   isClosing?: boolean;
@@ -28,6 +35,8 @@ export function BreakProgress({
   postponeBreakEnabled,
   postponeLengthSeconds,
   onPostponeBreak,
+  extraPostponeSeconds,
+  onPostponeBreakFor,
   settings,
   textColor,
   isClosing = false,
@@ -35,6 +44,11 @@ export function BreakProgress({
 }: BreakProgressProps) {
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining | null>(
     null,
+  );
+  // Chinese fork: whether the "推迟更久" choices are shown.
+  const [showMoreSnooze, setShowMoreSnooze] = useState(false);
+  const moreSnoozeChoices = (extraPostponeSeconds ?? []).filter(
+    (seconds) => seconds > 0,
   );
   const [progress, setProgress] = useState<number | null>(null);
   const [breakStartTime] = useState(new Date());
@@ -146,34 +160,16 @@ export function BreakProgress({
         >
           {breakTitle}
         </h1>
-        <div className="flex items-center gap-3">
-          {postponeBreakEnabled && (
-            <Button
-              className="!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20"
-              onClick={onPostponeBreak}
-              variant="outline"
-              style={{
-                color: textColor,
-                borderColor: "rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              {formatSnoozeLabel(postponeLengthSeconds)}
-            </Button>
-          )}
-          {endBreakEnabled && (
-            <Button
-              className="!bg-transparent hover:!bg-black/10 active:!bg-black/20 border-white/20"
-              onClick={onEndBreak}
-              variant="outline"
-              style={{
-                color: textColor,
-                borderColor: "rgba(255, 255, 255, 0.2)",
-              }}
-            >
-              {progress < 0.5 ? "取消休息" : "结束休息"}
-            </Button>
-          )}
-        </div>
+        {endBreakEnabled && (
+          <Button
+            className={BREAK_BUTTON_CLASS}
+            onClick={onEndBreak}
+            variant="outline"
+            style={{ color: textColor, borderColor: BREAK_BUTTON_BORDER }}
+          >
+            {progress < 0.5 ? "取消休息" : "结束休息"}
+          </Button>
+        )}
       </div>
 
       {/* Break message */}
@@ -183,6 +179,50 @@ export function BreakProgress({
       >
         {breakMessage}
       </div>
+
+      {/* Chinese fork: snooze buttons. "推迟更久" reveals a second row with
+          the longer choices (5 / 10 / 15 minutes by default, set in Settings). */}
+      {postponeBreakEnabled && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <Button
+              className={BREAK_BUTTON_CLASS}
+              onClick={onPostponeBreak}
+              variant="outline"
+              style={{ color: textColor, borderColor: BREAK_BUTTON_BORDER }}
+            >
+              {formatSnoozeLabel(postponeLengthSeconds)}
+            </Button>
+            {moreSnoozeChoices.length > 0 && (
+              <Button
+                className={BREAK_BUTTON_CLASS}
+                onClick={() => setShowMoreSnooze((shown) => !shown)}
+                variant="outline"
+                aria-expanded={showMoreSnooze}
+                style={{ color: textColor, borderColor: BREAK_BUTTON_BORDER }}
+              >
+                推迟更久
+                {showMoreSnooze ? <ChevronUp /> : <ChevronDown />}
+              </Button>
+            )}
+          </div>
+          {showMoreSnooze && moreSnoozeChoices.length > 0 && (
+            <div className="flex items-center gap-3">
+              {moreSnoozeChoices.map((seconds, index) => (
+                <Button
+                  key={`${index}-${seconds}`}
+                  className={BREAK_BUTTON_CLASS}
+                  onClick={() => onPostponeBreakFor(seconds)}
+                  variant="outline"
+                  style={{ color: textColor, borderColor: BREAK_BUTTON_BORDER }}
+                >
+                  {formatSnoozeLabel(seconds)}
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="w-full">
         <div className="flex justify-end items-center mb-2">

@@ -41,9 +41,10 @@ ipcMain.handle(IpcChannel.AllowPostponeGet, (): boolean => {
 
 ipcMain.handle(
   IpcChannel.BreakPostpone,
-  (_event: IpcMainInvokeEvent, action?: string): void => {
+  (_event: IpcMainInvokeEvent, action?: string, seconds?: unknown): void => {
     log.info(IpcChannel.BreakPostpone);
-    postponeBreak(action);
+    // `seconds` is validated in postponeBreak.
+    postponeBreak(action, seconds);
   },
 );
 
@@ -116,7 +117,9 @@ ipcMain.handle(
       } else {
         // Centered window for no backdrop mode
         const windowWidth = 500;
-        const windowHeight = 300;
+        // Chinese fork: taller than the original 300 to fit the snooze
+        // rows ("推迟更久" opens a second row).
+        const windowHeight = 420;
         const centerX =
           display.bounds.x + display.bounds.width / 2 - windowWidth / 2;
         const centerY =

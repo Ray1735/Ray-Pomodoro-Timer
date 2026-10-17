@@ -81,6 +81,13 @@ export default function SettingsEl() {
     setSettingsDraft({ ...settingsDraft, postponeLimit });
   };
 
+  // Chinese fork: one of the three "推迟更久" choices changed.
+  const handleExtraPostponeChange = (index: number, seconds: number): void => {
+    const extraPostponeSeconds = [...settingsDraft.extraPostponeSeconds];
+    extraPostponeSeconds[index] = seconds;
+    setSettingsDraft({ ...settingsDraft, extraPostponeSeconds });
+  };
+
   const handleTextChange = (
     field: string,
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -174,6 +181,7 @@ export default function SettingsEl() {
               onSwitchChange={handleSwitchChange}
               onDateChange={handleDateChange}
               onPostponeLimitChange={handlePostponeLimitChange}
+              onExtraPostponeChange={handleExtraPostponeChange}
             />
 
             <SkipCard

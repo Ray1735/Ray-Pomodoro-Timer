@@ -155,7 +155,23 @@ function createIdleNotification() {
   }
 }
 
-export function scheduleNextBreak(isPostpone = false): void {
+// Chinese fork: a snooze can now carry its own length (the "推迟更久" choices
+// on the full-screen break). Accept only a sane whole number of seconds; the
+// settings inputs go up to 23:59.
+const MAX_SNOOZE_SECONDS = 24 * 60 * 60;
+
+function validSnoozeSeconds(seconds: unknown): number | undefined {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds)) {
+    return undefined;
+  }
+  const rounded = Math.round(seconds);
+  return rounded > 0 && rounded <= MAX_SNOOZE_SECONDS ? rounded : undefined;
+}
+
+export function scheduleNextBreak(
+  isPostpone = false,
+  postponeSeconds?: number,
+): void {
   const settings: Settings = getSettings();
 
   if (idleStart) {
@@ -167,7 +183,7 @@ export function scheduleNextBreak(isPostpone = false): void {
   }
 
   const seconds = isPostpone
-    ? settings.postponeLengthSeconds
+    ? (postponeSeconds ?? settings.postponeLengthSeconds)
     : settings.breakFrequencySeconds;
 
   breakScheduledAt = moment();
@@ -208,7 +224,7 @@ export function getAllowPostpone(): boolean {
   return !settings.postponeLimit || postponedCount < settings.postponeLimit;
 }
 
-export function postponeBreak(action = "snoozed"): void {
+export function postponeBreak(action = "snoozed", seconds?: unknown): void {
   postponedCount++;
   havingBreak = false;
   // Chinese fork: snoozing can now also happen in the middle of a break. A
@@ -220,8 +236,13 @@ export function postponeBreak(action = "snoozed"): void {
     log.info("Creating break with normal frequency");
     scheduleNextBreak();
   } else {
-    log.info("Creating break with postpone length");
-    scheduleNextBreak(true);
+    // A custom length comes from the "推迟更久" choices; anything invalid
+    // falls back to the normal snooze length.
+    const customSeconds = validSnoozeSeconds(seconds);
+    log.info(
+      `Creating break with postpone length [custom=${customSeconds ?? "none"}]`,
+    );
+    scheduleNextBreak(true, customSeconds);
   }
 }
 
